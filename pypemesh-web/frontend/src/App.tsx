@@ -5,7 +5,10 @@ import { SAMPLE_PROJECTS } from "./sample";
 import { solveProject } from "./api";
 import type { ModeShape, SolveResponse } from "./types";
 
-type CodeChoice = "B31.3" | "B31.1" | "B31.4" | "B31.8" | "EN-13480";
+type CodeChoice =
+  | "B31.3" | "B31.1" | "B31.4" | "B31.5"
+  | "B31.8" | "B31.9" | "B31.12"
+  | "CSA-Z662" | "EN-13480";
 
 export function App() {
   const [selectedSample, setSelectedSample] = useState<string>(SAMPLE_PROJECTS[0].id);
@@ -74,7 +77,11 @@ export function App() {
                 <option value="B31.3">ASME B31.3 (process)</option>
                 <option value="B31.1">ASME B31.1 (power)</option>
                 <option value="B31.4">ASME B31.4 (liquid pipeline)</option>
+                <option value="B31.5">ASME B31.5 (refrigeration)</option>
                 <option value="B31.8">ASME B31.8 (gas transmission)</option>
+                <option value="B31.9">ASME B31.9 (building services)</option>
+                <option value="B31.12">ASME B31.12 (hydrogen)</option>
+                <option value="CSA-Z662">CSA Z662 (Canadian pipeline)</option>
                 <option value="EN-13480">EN 13480 (European)</option>
               </select>
               {animatedMode && (

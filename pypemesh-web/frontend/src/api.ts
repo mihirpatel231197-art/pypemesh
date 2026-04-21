@@ -14,7 +14,7 @@ const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "http:
 
 export async function solveProject(
   project: PipeProject,
-  code: "B31.3" | "B31.1" | "B31.4" | "B31.8" | "EN-13480" = "B31.3",
+  code: string = "B31.3",
 ): Promise<SolveResponse> {
   try {
     const res = await fetch(`${API_BASE}/solve`, {
