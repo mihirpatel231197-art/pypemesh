@@ -1,0 +1,6 @@
+{
+  "_description": "Fixed-fixed 6\" SCH 40 pipe under 50 bar internal pressure. Sustained stress ratio dominated by PD/4t. Verified analytically against B31.3 §319.4 equation 23a.",
+  "stress_ratios": {
+    "E1:SUS": 0.214
+  }
+}

@@ -26,6 +26,7 @@ dependencies = [
     "scipy>=1.12",
     "pydantic>=2.6",
     "reportlab>=4.0",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]

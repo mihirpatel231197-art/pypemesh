@@ -1,0 +1,136 @@
+{
+  "schema_version": "0.1.0",
+  "project": {
+    "name": "fixed-fixed-pressure"
+  },
+  "nodes": [
+    {
+      "id": "A",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": "B",
+      "x": 2.0,
+      "y": 0,
+      "z": 0
+    }
+  ],
+  "sections": [
+    {
+      "id": "6-STD",
+      "outside_diameter": 0.1683,
+      "wall_thickness": 0.00711,
+      "corrosion_allowance": 0.0,
+      "insulation_thickness": 0.0,
+      "insulation_density": 0.0
+    }
+  ],
+  "materials": [
+    {
+      "id": "A106-B",
+      "name": "ASTM A106 Gr.B",
+      "elastic_modulus": [
+        [
+          293.15,
+          203000000000.0
+        ]
+      ],
+      "thermal_expansion": [
+        [
+          293.15,
+          1.15e-05
+        ]
+      ],
+      "allowable_hot": [
+        [
+          293.15,
+          138000000.0
+        ]
+      ],
+      "allowable_cold": 138000000.0,
+      "density": 7850.0,
+      "poisson": 0.3
+    }
+  ],
+  "elements": [
+    {
+      "id": "E1",
+      "type": "pipe",
+      "from_node": "A",
+      "to_node": "B",
+      "section": "6-STD",
+      "material": "A106-B",
+      "bend_radius": null,
+      "branch_section": null
+    }
+  ],
+  "restraints": [
+    {
+      "node": "A",
+      "type": "anchor",
+      "dx": false,
+      "dy": false,
+      "dz": false,
+      "rx": false,
+      "ry": false,
+      "rz": false,
+      "stiffness": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "gap": null,
+      "friction": 0.0
+    },
+    {
+      "node": "B",
+      "type": "anchor",
+      "dx": false,
+      "dy": false,
+      "dz": false,
+      "rx": false,
+      "ry": false,
+      "rz": false,
+      "stiffness": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "gap": null,
+      "friction": 0.0
+    }
+  ],
+  "load_cases": [
+    {
+      "id": "W",
+      "kind": "weight",
+      "scale": 1.0,
+      "temperature": null,
+      "pressure": null,
+      "direction": null
+    },
+    {
+      "id": "P1",
+      "kind": "pressure",
+      "scale": 1.0,
+      "temperature": null,
+      "pressure": 5000000.0,
+      "direction": null
+    }
+  ],
+  "load_combinations": [
+    {
+      "id": "SUS",
+      "cases": [
+        "W",
+        "P1"
+      ],
+      "category": "sustained",
+      "scales": []
+    }
+  ],
+  "code": "B31.3",
+  "code_version": "2022"
+}
