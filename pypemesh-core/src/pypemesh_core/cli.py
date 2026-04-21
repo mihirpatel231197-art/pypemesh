@@ -18,17 +18,25 @@ import sys
 from pathlib import Path
 
 from pypemesh_core import __version__
+from pypemesh_core.codes.b31_1 import B31_1
 from pypemesh_core.codes.b31_3 import B31_3
-from pypemesh_core.io.project import load_project
+from pypemesh_core.io.pcf import load_pcf
+from pypemesh_core.io.project import load_project, save_project
 from pypemesh_core.io.report_pdf import generate_pdf_report
 from pypemesh_core.solver.combinations import evaluate_combinations
 from pypemesh_core.validation.harness import run_all_benchmarks
 
 
+CODE_REGISTRY = {"B31.3": B31_3, "B31.1": B31_1}
+
+
 def _cmd_solve(args: argparse.Namespace) -> int:
     project = load_project(args.project)
     combos = evaluate_combinations(project, T_eval=args.temperature)
-    code_results = B31_3(T_evaluation=args.temperature).evaluate(project, combinations=combos)
+    code = args.code if args.code in CODE_REGISTRY else "B31.3"
+    code_results = CODE_REGISTRY[code](T_evaluation=args.temperature).evaluate(
+        project, combinations=combos,
+    )
 
     if args.json:
         out = {
@@ -122,6 +130,15 @@ def _cmd_version(_args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_import_pcf(args: argparse.Namespace) -> int:
+    project = load_pcf(args.pcf_file)
+    output = args.output or f"{Path(args.pcf_file).stem}.json"
+    save_project(project, output)
+    print(f"Imported {args.pcf_file} → {output}")
+    print(f"  {len(project.nodes)} nodes, {len(project.elements)} elements")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pypemesh",
@@ -131,6 +148,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_solve = sub.add_parser("solve", help="Solve a project and print stress results")
     p_solve.add_argument("project", help="Path to project JSON file")
+    p_solve.add_argument("--code", default="B31.3", choices=["B31.3", "B31.1"],
+                         help="Code to check against")
     p_solve.add_argument("--temperature", type=float, default=293.15, help="Evaluation temperature [K]")
     p_solve.add_argument("--json", action="store_true", help="Output as JSON")
     p_solve.set_defaults(func=_cmd_solve)
@@ -153,6 +172,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_ver = sub.add_parser("version", help="Print version")
     p_ver.set_defaults(func=_cmd_version)
+
+    p_pcf = sub.add_parser("import-pcf",
+                           help="Import a PCF (Piping Component File) and write project JSON")
+    p_pcf.add_argument("pcf_file", help="Path to .pcf file")
+    p_pcf.add_argument("-o", "--output", help="Output project JSON path (default: <pcf_stem>.json)")
+    p_pcf.set_defaults(func=_cmd_import_pcf)
 
     return parser
 
