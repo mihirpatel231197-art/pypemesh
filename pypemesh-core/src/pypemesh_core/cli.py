@@ -150,6 +150,27 @@ def _cmd_import_pcf(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_materials(_args: argparse.Namespace) -> int:
+    from pypemesh_core.materials.library import list_materials
+    items = list_materials()
+    print(f"\n  pypemesh — curated material library ({len(items)} materials)")
+    print(f"  {'ID':<20} Name")
+    print(f"  {'-' * 20} {'-' * 60}")
+    for mid, name in items:
+        print(f"  {mid:<20} {name}")
+    print()
+    return 0
+
+
+def _cmd_codes(_args: argparse.Namespace) -> int:
+    print(f"\n  pypemesh — supported codes ({len(CODE_REGISTRY)} codes)")
+    for code_id, cls in CODE_REGISTRY.items():
+        ver = getattr(cls, "version", "?")
+        print(f"  {code_id:<15} ({ver})")
+    print()
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pypemesh",
@@ -190,6 +211,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_pcf.add_argument("pcf_file", help="Path to .pcf file")
     p_pcf.add_argument("-o", "--output", help="Output project JSON path (default: <pcf_stem>.json)")
     p_pcf.set_defaults(func=_cmd_import_pcf)
+
+    p_mat = sub.add_parser("materials", help="List curated materials in the library")
+    p_mat.set_defaults(func=_cmd_materials)
+
+    p_cod = sub.add_parser("codes", help="List supported compliance codes")
+    p_cod.set_defaults(func=_cmd_codes)
 
     return parser
 
