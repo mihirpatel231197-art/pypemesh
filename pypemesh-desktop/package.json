@@ -1,0 +1,35 @@
+{
+  "name": "pypemesh-desktop",
+  "version": "0.1.0-alpha.0",
+  "description": "pypemesh desktop wrapper (Electron)",
+  "main": "main.js",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-builder",
+    "package:mac": "electron-builder --mac",
+    "package:win": "electron-builder --win",
+    "package:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.pypemesh.desktop",
+    "productName": "pypemesh",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**",
+      "node_modules/**"
+    ],
+    "mac": { "category": "public.app-category.developer-tools", "target": "dmg" },
+    "win": { "target": "nsis" },
+    "linux": { "target": ["AppImage", "deb"] }
+  }
+}

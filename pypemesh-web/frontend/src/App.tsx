@@ -2,8 +2,11 @@ import { useState } from "react";
 import { Modeler } from "./Modeler";
 import { Sidebar } from "./Sidebar";
 import { Spreadsheet } from "./Spreadsheet";
+import { ShortcutHelp } from "./ShortcutHelp";
 import { SAMPLE_PROJECTS } from "./sample";
 import { solveProject } from "./api";
+import { useKeyboardShortcuts } from "./useKeyboard";
+import { useAutosave } from "./useAutosave";
 import type { ModeShape, SolveResponse } from "./types";
 
 type CodeChoice =
@@ -24,8 +27,23 @@ export function App() {
   const [solving, setSolving] = useState(false);
   const [modesData, setModesData] = useState<ModeShape[] | null>(null);
   const [animatedModeIndex, setAnimatedModeIndex] = useState<number | null>(null);
+  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
   const project = SAMPLE_PROJECTS.find((s) => s.id === selectedSample)!.project;
+
+  // Autosave session state (sample, code, results) to localStorage
+  useAutosave({ selectedSample, selectedCode, viewMode, resultCombo });
+
+  const shortcuts = [
+    { key: "?", description: "Show this shortcut help", handler: () => setShortcutHelpOpen(true) },
+    { key: "r", description: "Run code check", handler: () => handleSolve() },
+    { key: "t", description: "Toggle 3D / Table view", handler: () => setViewMode((m) => m === "3d" ? "spreadsheet" : "3d") },
+    { key: "escape", description: "Clear selection / close help",
+      handler: () => { setSelectedNode(null); setSelectedElement(null); setShortcutHelpOpen(false); } },
+    { key: "1", description: "Switch to first sample", handler: () => handleSelectSample(SAMPLE_PROJECTS[0].id) },
+    { key: "2", description: "Switch to second sample", handler: () => handleSelectSample(SAMPLE_PROJECTS[1]?.id ?? SAMPLE_PROJECTS[0].id) },
+  ];
+  useKeyboardShortcuts(shortcuts);
 
   function handleSelectSample(id: string) {
     setSelectedSample(id);
@@ -56,9 +74,11 @@ export function App() {
 
   return (
     <div className="app">
+      <ShortcutHelp shortcuts={shortcuts} open={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
       <header>
         <div className="logo">pypemesh <span className="badge">pre-alpha</span></div>
         <nav>
+          <a href="#" onClick={(e) => { e.preventDefault(); setShortcutHelpOpen(true); }}>?</a>
           <a href="https://github.com/mihirpatel231197-art/pypemesh" target="_blank" rel="noreferrer">
             GitHub
           </a>

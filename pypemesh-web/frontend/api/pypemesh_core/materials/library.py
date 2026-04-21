@@ -368,7 +368,7 @@ HDPE_PE100 = Material(
 )
 
 
-ALL_MATERIALS = {
+_BASE_MATERIALS = {
     m.id: m for m in [
         # Carbon steels
         A106_GR_B, A53_GR_B, A333_GR_6, A671_CC70,
@@ -392,6 +392,10 @@ ALL_MATERIALS = {
         HDPE_PE100, PVC_SCH80, PVDF,
     ]
 }
+
+# Extended library (see library_ext.py) — brings total to 50+
+from pypemesh_core.materials.library_ext import EXTENDED_MATERIALS  # noqa: E402
+ALL_MATERIALS = {**_BASE_MATERIALS, **EXTENDED_MATERIALS}
 
 
 def get_material(material_id: str) -> Material:

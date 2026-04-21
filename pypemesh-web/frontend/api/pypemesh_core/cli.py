@@ -173,6 +173,31 @@ def _cmd_codes(_args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_csv(args: argparse.Namespace) -> int:
+    from pypemesh_core.io.csv_export import save_reactions_csv, save_results_csv
+    project = load_project(args.project)
+    combos = evaluate_combinations(project)
+    code = args.code if args.code in CODE_REGISTRY else "B31.3"
+    results = CODE_REGISTRY[code]().evaluate(project, combinations=combos)
+    stem = Path(args.project).stem
+    results_path = args.output or f"{stem}_results.csv"
+    reactions_path = args.reactions_output or f"{stem}_reactions.csv"
+    save_results_csv(results, results_path)
+    save_reactions_csv(combos, reactions_path)
+    print(f"Wrote: {results_path}")
+    print(f"Wrote: {reactions_path}")
+    return 0
+
+
+def _cmd_isometric(args: argparse.Namespace) -> int:
+    from pypemesh_core.io.isometric import generate_isometric_pdf
+    project = load_project(args.project)
+    output = args.output or f"{Path(args.project).stem}_iso.pdf"
+    generate_isometric_pdf(project, output_path=output)
+    print(f"Wrote: {output}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pypemesh",
@@ -219,6 +244,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_cod = sub.add_parser("codes", help="List supported compliance codes")
     p_cod.set_defaults(func=_cmd_codes)
+
+    p_csv = sub.add_parser("csv", help="Export stress results + reactions to CSV")
+    p_csv.add_argument("project")
+    p_csv.add_argument("--code", default="B31.3", choices=list(CODE_REGISTRY.keys()))
+    p_csv.add_argument("-o", "--output", help="Results CSV path")
+    p_csv.add_argument("--reactions-output", help="Reactions CSV path")
+    p_csv.set_defaults(func=_cmd_csv)
+
+    p_iso = sub.add_parser("isometric", help="Generate an isometric PDF drawing")
+    p_iso.add_argument("project")
+    p_iso.add_argument("-o", "--output", help="Output PDF path")
+    p_iso.set_defaults(func=_cmd_isometric)
 
     return parser
 
