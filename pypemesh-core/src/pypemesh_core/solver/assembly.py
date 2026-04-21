@@ -10,7 +10,10 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.sparse import coo_matrix, csr_matrix
 
-from pypemesh_core.solver.elements.beam import beam_stiffness_global
+from pypemesh_core.solver.elements.beam import (
+    beam_mass_global,
+    beam_stiffness_global,
+)
 from pypemesh_core.solver.elements.elbow import elbow_h, elbow_stiffness_global
 from pypemesh_core.solver.materials import elastic_modulus_at, shear_modulus_at
 from pypemesh_core.solver.model import ElementType, Project
@@ -122,3 +125,58 @@ def assemble_global_stiffness(
 
     K_global = coo_matrix((vals, (rows, cols)), shape=(n, n)).tocsr()
     return K_global, element_data
+
+
+def assemble_global_mass(project: Project) -> csr_matrix:
+    """Assemble global consistent mass matrix.
+
+    Used for modal/dynamic analysis. See DYNAMIC_ANALYSIS.md §2.
+    """
+    dof_map = build_dof_map(project)
+    n = total_dofs(project)
+    rows: list[int] = []
+    cols: list[int] = []
+    vals: list[float] = []
+
+    node_index = {n.id: n for n in project.nodes}
+
+    for elem in project.elements:
+        n_start = node_index[elem.from_node]
+        n_end = node_index[elem.to_node]
+        p_start = np.array([n_start.x, n_start.y, n_start.z])
+        p_end = np.array([n_end.x, n_end.y, n_end.z])
+
+        section = _lookup(project.sections, "id", elem.section)
+        material = _lookup(project.materials, "id", elem.material)
+
+        from pypemesh_core.solver.sections import (
+            cross_section_area,
+            insulation_area_per_length,
+            polar_moment_of_area,
+        )
+
+        A = cross_section_area(section, structural=True)
+        # effective density = pipe + insulation per unit area
+        rho_eff = material.density
+        if section.insulation_density and section.insulation_thickness:
+            A_ins = insulation_area_per_length(section)
+            rho_eff = (material.density * A + section.insulation_density * A_ins) / A
+        J = polar_moment_of_area(section, structural=True)
+
+        M_e, _ = beam_mass_global(p_start, p_end, rho_eff, A, J)
+
+        d_start = dof_map[elem.from_node]
+        d_end = dof_map[elem.to_node]
+        elem_dofs = np.concatenate([
+            np.arange(d_start, d_start + DOF_PER_NODE),
+            np.arange(d_end, d_end + DOF_PER_NODE),
+        ])
+
+        for i, gi in enumerate(elem_dofs):
+            for j, gj in enumerate(elem_dofs):
+                if M_e[i, j] != 0.0:
+                    rows.append(int(gi))
+                    cols.append(int(gj))
+                    vals.append(float(M_e[i, j]))
+
+    return coo_matrix((vals, (rows, cols)), shape=(n, n)).tocsr()

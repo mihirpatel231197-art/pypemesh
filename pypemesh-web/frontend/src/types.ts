@@ -129,3 +129,12 @@ export interface SolveResponse {
     overall_status: "pass" | "fail";
   };
 }
+
+export interface ModesResponse {
+  status: string;
+  project_name: string;
+  n_modes: number;
+  frequencies_hz: number[];
+  angular_frequencies: number[];
+  periods_s: number[];
+}

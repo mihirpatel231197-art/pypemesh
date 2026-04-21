@@ -100,6 +100,47 @@ def test_unsupported_code_returns_400(client: TestClient, sample_project_dict: d
     assert r.status_code == 400
 
 
+def test_modes_endpoint(client: TestClient) -> None:
+    """Modal analysis needs free DOFs — use a cantilever (one anchor) for this test."""
+    cant = Project(
+        name="cant-modal",
+        nodes=[Node(id="A", x=0, y=0, z=0), Node(id="B", x=2.0, y=0, z=0)],
+        elements=[Element(
+            id="E1", type=ElementType.PIPE,
+            from_node="A", to_node="B",
+            section="6-STD", material="A106-B",
+        )],
+        sections=[Section(id="6-STD", outside_diameter=0.1683, wall_thickness=0.00711)],
+        materials=[Material(
+            id="A106-B", name="ASTM A106 Gr.B",
+            elastic_modulus=[(293.15, 2.03e11)],
+            thermal_expansion=[(293.15, 11.5e-6)],
+            allowable_hot=[(293.15, 138e6)],
+            allowable_cold=138e6, density=7850.0, poisson=0.3,
+        )],
+        restraints=[Restraint(node="A", type=RestraintType.ANCHOR)],
+        load_cases=[], load_combinations=[],
+    )
+    r = client.post("/modes", json={"project": project_to_dict(cant), "n_modes": 3})
+    assert r.status_code == 200
+    data = r.json()
+    assert data["status"] == "ok"
+    assert data["n_modes"] >= 1
+    assert all(f > 0 for f in data["frequencies_hz"])
+    freqs = data["frequencies_hz"]
+    for i in range(len(freqs) - 1):
+        assert freqs[i] <= freqs[i + 1]
+
+
+def test_modes_fully_constrained_returns_500(
+    client: TestClient, sample_project_dict: dict
+) -> None:
+    """Fully-constrained model has no free DOFs → graceful 500."""
+    r = client.post("/modes", json={"project": sample_project_dict, "n_modes": 5})
+    assert r.status_code == 500
+    assert "free DOF" in r.json()["detail"] or "constrained" in r.json()["detail"]
+
+
 def test_report_endpoint_returns_pdf(client: TestClient, sample_project_dict: dict) -> None:
     r = client.post("/report", json={
         "project": sample_project_dict,

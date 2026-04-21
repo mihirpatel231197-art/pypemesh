@@ -118,6 +118,13 @@ main { flex: 1; }
 .btn-secondary:disabled { opacity: 0.6; cursor: progress; }
 .report-status { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
 
+.modes-table { margin-top: 10px; background: var(--bg-elev-2); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+.mode-row { display: grid; grid-template-columns: 60px 1fr 90px; gap: 8px; padding: 6px 10px; border-top: 1px solid var(--border); font-size: 12px; align-items: center; }
+.mode-row:first-child { border-top: none; }
+.mode-num { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.mode-freq { font-family: ui-monospace, monospace; font-weight: 600; color: var(--accent); text-align: right; }
+.mode-period { font-family: ui-monospace, monospace; font-size: 10px; color: var(--muted); text-align: right; }
+
 .summary {
   margin-top: 12px;
   padding: 10px;

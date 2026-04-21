@@ -1,5 +1,14 @@
-import type { PipeProject, SolveResponse } from "./types";
+import type { ModesResponse, PipeProject, SolveResponse } from "./types";
 import { mockResponse } from "./sample";
+
+const mockModes: ModesResponse = {
+  status: "ok",
+  project_name: "U-loop demo (mock)",
+  n_modes: 5,
+  frequencies_hz: [12.4, 15.7, 28.1, 41.5, 62.8],
+  angular_frequencies: [77.9, 98.6, 176.6, 260.7, 394.6],
+  periods_s: [0.0807, 0.0637, 0.0356, 0.0241, 0.0159],
+};
 
 const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "http://localhost:8000";
 
@@ -16,6 +25,22 @@ export async function solveProject(project: PipeProject): Promise<SolveResponse>
     console.warn("Backend unreachable, using mock response:", err);
     await new Promise((r) => setTimeout(r, 600)); // mimic latency
     return mockResponse;
+  }
+}
+
+export async function getModes(project: PipeProject, n_modes = 10): Promise<ModesResponse> {
+  try {
+    const res = await fetch(`${API_BASE}/modes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ project, n_modes }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as ModesResponse;
+  } catch (err) {
+    console.warn("Backend unreachable, using mock modes:", err);
+    await new Promise((r) => setTimeout(r, 400));
+    return mockModes;
   }
 }
 

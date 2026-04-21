@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { PipeProject, SolveResponse } from "./types";
-import { downloadReport } from "./api";
+import type { ModesResponse, PipeProject, SolveResponse } from "./types";
+import { downloadReport, getModes } from "./api";
 
 interface Props {
   project: PipeProject;
@@ -38,6 +38,8 @@ export function Sidebar({
   const element = selectedElement ? project.elements.find((e) => e.id === selectedElement) : null;
   const [reportStatus, setReportStatus] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [modes, setModes] = useState<ModesResponse | null>(null);
+  const [solvingModes, setSolvingModes] = useState(false);
 
   async function handleDownload() {
     setDownloading(true);
@@ -46,6 +48,16 @@ export function Sidebar({
     setDownloading(false);
     if (!r.ok) setReportStatus(r.message ?? "Download failed");
     else setReportStatus("Downloaded.");
+  }
+
+  async function handleModes() {
+    setSolvingModes(true);
+    try {
+      const r = await getModes(project, 5);
+      setModes(r);
+    } finally {
+      setSolvingModes(false);
+    }
   }
 
   // Per-combo summary
@@ -89,6 +101,24 @@ export function Sidebar({
               {downloading ? "Generating PDF…" : "Download PDF report"}
             </button>
             {reportStatus && <div className="report-status">{reportStatus}</div>}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h3>Modal analysis</h3>
+        <button className="btn-secondary" onClick={handleModes} disabled={solvingModes}>
+          {solvingModes ? "Computing modes…" : "Compute first 5 natural frequencies"}
+        </button>
+        {modes && (
+          <div className="modes-table">
+            {modes.frequencies_hz.slice(0, 5).map((f, i) => (
+              <div key={i} className="mode-row">
+                <span className="mode-num">Mode {i + 1}</span>
+                <span className="mode-freq">{f.toFixed(2)} Hz</span>
+                <span className="mode-period">T = {modes.periods_s[i].toFixed(3)} s</span>
+              </div>
+            ))}
           </div>
         )}
       </section>

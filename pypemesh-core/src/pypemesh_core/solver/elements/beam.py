@@ -162,3 +162,84 @@ def beam_stiffness_global(
     T = transformation_matrix(p_start, p_end, up)
     K_global = T.T @ K_local @ T
     return K_global, T, L
+
+
+def beam_mass_consistent_local(
+    L: float, rho: float, A: float, Ix: float = 0.0
+) -> NDArray[np.float64]:
+    """12×12 consistent mass matrix for a 3D beam, derived from Hermite shape
+    functions (matches the stiffness matrix shape functions).
+
+    Reference: docs/theory/DYNAMIC_ANALYSIS.md §2.1.
+
+    Args:
+        L: element length [m]
+        rho: material density [kg/m^3]
+        A: cross-section area [m^2]
+        Ix: torsional inertia (polar moment × density). Default 0 — torsion
+            mass typically negligible compared to translational.
+
+    Returns:
+        M (12, 12) symmetric, positive-definite.
+    """
+    if L <= 0:
+        raise ValueError(f"Element length must be positive, got {L}")
+    m_total = rho * A * L
+    factor = m_total / 420.0
+
+    M = np.zeros((12, 12), dtype=np.float64)
+
+    # Axial (u_i, u_j → DOF 0, 6) — 1D bar consistent mass
+    M[0, 0] = M[6, 6] = m_total / 3.0
+    M[0, 6] = M[6, 0] = m_total / 6.0
+
+    # Torsion (θx_i, θx_j → DOF 3, 9)
+    if Ix > 0:
+        It = rho * Ix * L
+        M[3, 3] = M[9, 9] = It / 3.0
+        M[3, 9] = M[9, 3] = It / 6.0
+
+    # Bending in x-y (v, θz → DOF 1, 5, 7, 11)
+    bend_z = factor * np.array([
+        [156, 22 * L, 54, -13 * L],
+        [22 * L, 4 * L * L, 13 * L, -3 * L * L],
+        [54, 13 * L, 156, -22 * L],
+        [-13 * L, -3 * L * L, -22 * L, 4 * L * L],
+    ])
+    z_dofs = [1, 5, 7, 11]
+    for i, gi in enumerate(z_dofs):
+        for j, gj in enumerate(z_dofs):
+            M[gi, gj] += bend_z[i, j]
+
+    # Bending in x-z (w, θy → DOF 2, 4, 8, 10) — same form, sign-flipped on θ
+    bend_y = factor * np.array([
+        [156, -22 * L, 54, 13 * L],
+        [-22 * L, 4 * L * L, -13 * L, -3 * L * L],
+        [54, -13 * L, 156, 22 * L],
+        [13 * L, -3 * L * L, 22 * L, 4 * L * L],
+    ])
+    y_dofs = [2, 4, 8, 10]
+    for i, gi in enumerate(y_dofs):
+        for j, gj in enumerate(y_dofs):
+            M[gi, gj] += bend_y[i, j]
+
+    return M
+
+
+def beam_mass_global(
+    p_start: NDArray[np.float64],
+    p_end: NDArray[np.float64],
+    rho: float,
+    A: float,
+    J: float = 0.0,
+    up: NDArray[np.float64] | None = None,
+) -> tuple[NDArray[np.float64], float]:
+    """Global-frame consistent mass matrix for a 3D beam element.
+
+    Returns: (M_global (12, 12), L element length).
+    """
+    L = float(np.linalg.norm(np.asarray(p_end) - np.asarray(p_start)))
+    M_local = beam_mass_consistent_local(L, rho, A, Ix=J)
+    T = transformation_matrix(p_start, p_end, up)
+    M_global = T.T @ M_local @ T
+    return M_global, L

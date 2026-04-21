@@ -20,7 +20,9 @@ import pypemesh_core
 from pypemesh_core.codes.b31_3 import B31_3
 from pypemesh_core.io.project import project_from_dict
 from pypemesh_core.io.report_pdf import generate_pdf_report
+from pypemesh_core.solver.assembly import assemble_global_mass, assemble_global_stiffness
 from pypemesh_core.solver.combinations import evaluate_combinations
+from pypemesh_core.solver.dynamic import modal_analysis
 
 app = FastAPI(
     title="pypemesh API",
@@ -163,6 +165,47 @@ async def report(req: ReportRequest) -> Response:
         headers={
             "Content-Disposition": f'attachment; filename="{project.name}_b31_3_report.pdf"'
         },
+    )
+
+
+class ModesRequest(BaseModel):
+    project: dict[str, Any]
+    n_modes: int = 10
+    T_evaluation: float | None = None
+
+
+class ModesResponse(BaseModel):
+    status: str
+    project_name: str
+    n_modes: int
+    frequencies_hz: list[float]
+    angular_frequencies: list[float]
+    periods_s: list[float]
+
+
+@app.post("/modes", response_model=ModesResponse)
+async def modes(req: ModesRequest) -> ModesResponse:
+    """Solve the eigenproblem for the lowest n_modes natural frequencies."""
+    try:
+        project = project_from_dict(req.project)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid project: {e}")
+
+    T_eval = req.T_evaluation if req.T_evaluation is not None else 293.15
+    try:
+        K, _ = assemble_global_stiffness(project, T_eval=T_eval)
+        M = assemble_global_mass(project)
+        result = modal_analysis(K, M, project, n_modes=req.n_modes)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Modal solver error: {e}")
+
+    return ModesResponse(
+        status="ok",
+        project_name=project.name,
+        n_modes=len(result.frequencies_hz),
+        frequencies_hz=result.frequencies_hz.tolist(),
+        angular_frequencies=result.angular_freq.tolist(),
+        periods_s=[float(t) if t != float("inf") else 0.0 for t in result.periods_s],
     )
 
 
