@@ -8,7 +8,11 @@ import { LoadCaseEditor } from "./components/LoadCaseEditor";
 import { ImportExportBar } from "./components/ImportExportBar";
 import { StatusBar } from "./components/StatusBar";
 import { CommandLine } from "./components/CommandLine";
+import { CADImport } from "./components/CADImport";
 import { ShortcutHelp } from "./ShortcutHelp";
+import type { ImportedGeometry } from "./solid/stepImport";
+// Self-check tests (exposed on window for console debugging)
+import "./sketch/tests";
 import { SAMPLE_PROJECTS } from "./sample";
 import { solveProject } from "./api";
 import { useKeyboardShortcuts } from "./useKeyboard";
@@ -38,6 +42,7 @@ export function App() {
   const [animatedModeIndex] = useState<number | null>(null);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [samplePicker, setSamplePicker] = useState<string>("u-loop");
+  const [importedGeometry, setImportedGeometry] = useState<ImportedGeometry | null>(null);
 
   useEffect(() => {
     if (project.nodes.length === 0) {
@@ -117,6 +122,7 @@ export function App() {
             ))}
           </select>
           <ImportExportBar />
+          <CADImport onImported={setImportedGeometry} />
         </div>
         <nav>
           <a href="#" onClick={(e) => { e.preventDefault(); setShortcutHelpOpen(true); }}>?</a>
@@ -138,7 +144,7 @@ export function App() {
 
         <main className="cad-main">
           {mode === "design" ? (
-            <DesignViewport />
+            <DesignViewport importedGeometry={importedGeometry} />
           ) : (
             <Modeler
               project={project}
