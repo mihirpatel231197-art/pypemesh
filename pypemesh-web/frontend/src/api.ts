@@ -10,14 +10,20 @@ const mockModes: ModesResponse = {
   periods_s: [0.0807, 0.0637, 0.0356, 0.0241, 0.0159],
 };
 
-const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "http://localhost:8000";
+// In production (Vercel) hit the same-origin Python serverless function.
+// In local dev, default to the FastAPI backend at http://localhost:8000.
+const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)
+  ?? (import.meta.env.DEV ? "http://localhost:8000" : "");
+const SOLVE_URL = API_BASE ? `${API_BASE}/solve` : "/api/solve";
+const MODES_URL = API_BASE ? `${API_BASE}/modes` : "/api/modes";  // mock only in prod (heavy)
+const REPORT_URL = API_BASE ? `${API_BASE}/report` : "/api/report";
 
 export async function solveProject(
   project: PipeProject,
   code: string = "B31.3",
 ): Promise<SolveResponse> {
   try {
-    const res = await fetch(`${API_BASE}/solve`, {
+    const res = await fetch(SOLVE_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project, code }),
@@ -33,7 +39,7 @@ export async function solveProject(
 
 export async function getModes(project: PipeProject, n_modes = 10): Promise<ModesResponse> {
   try {
-    const res = await fetch(`${API_BASE}/modes`, {
+    const res = await fetch(MODES_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project, n_modes }),
@@ -52,7 +58,7 @@ export async function downloadReport(
   options: { company?: string; engineer?: string } = {},
 ): Promise<{ ok: boolean; message?: string }> {
   try {
-    const res = await fetch(`${API_BASE}/report`, {
+    const res = await fetch(REPORT_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project, ...options }),

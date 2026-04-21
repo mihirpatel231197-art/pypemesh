@@ -5,6 +5,12 @@
   "installCommand": "npm install",
   "framework": "vite",
   "devCommand": "npm run dev",
+  "functions": {
+    "api/solve.py": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
   "headers": [
     {
       "source": "/assets/(.*)",
