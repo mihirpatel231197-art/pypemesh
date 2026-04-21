@@ -83,3 +83,10 @@ coverage/
 *.db
 local_data/
 scratch/
+
+# TypeScript build artifacts (generated from .ts/.tsx)
+*.tsbuildinfo
+pypemesh-web/frontend/src/**/*.js
+pypemesh-web/frontend/src/**/*.d.ts
+pypemesh-web/frontend/vite.config.js
+pypemesh-web/frontend/vite.config.d.ts
