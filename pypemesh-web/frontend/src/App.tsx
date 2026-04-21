@@ -3,9 +3,11 @@ import { DesignViewport } from "./components/DesignViewport";
 import { Modeler } from "./Modeler";
 import { Toolbar } from "./components/Toolbar";
 import { PropertyEditor } from "./components/PropertyEditor";
-import { LibraryBrowser } from "./components/LibraryBrowser";
+import { LeftPanel } from "./components/LeftPanel";
 import { LoadCaseEditor } from "./components/LoadCaseEditor";
 import { ImportExportBar } from "./components/ImportExportBar";
+import { StatusBar } from "./components/StatusBar";
+import { CommandLine } from "./components/CommandLine";
 import { ShortcutHelp } from "./ShortcutHelp";
 import { SAMPLE_PROJECTS } from "./sample";
 import { solveProject } from "./api";
@@ -131,7 +133,7 @@ export function App() {
 
       <div className="cad-layout">
         <aside className="cad-left">
-          <LibraryBrowser />
+          <LeftPanel />
         </aside>
 
         <main className="cad-main">
@@ -215,6 +217,9 @@ export function App() {
           </section>
         </aside>
       </div>
+
+      <StatusBar />
+      <CommandLine />
     </div>
   );
 }
