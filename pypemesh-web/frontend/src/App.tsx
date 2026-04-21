@@ -1,77 +1,114 @@
+import { useState } from "react";
+import { Modeler } from "./Modeler";
+import { Sidebar } from "./Sidebar";
+import { sampleProject } from "./sample";
+import { solveProject } from "./api";
+import type { SolveResponse } from "./types";
+
 export function App() {
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [selectedElement, setSelectedElement] = useState<string | null>(null);
+  const [results, setResults] = useState<SolveResponse | null>(null);
+  const [resultCombo, setResultCombo] = useState<string | null>(null);
+  const [solving, setSolving] = useState(false);
+
+  async function handleSolve() {
+    setSolving(true);
+    try {
+      const res = await solveProject(sampleProject);
+      setResults(res);
+      // Default to first combination for coloring
+      if (sampleProject.load_combinations.length > 0) {
+        setResultCombo(sampleProject.load_combinations[0].id);
+      }
+    } finally {
+      setSolving(false);
+    }
+  }
+
   return (
-    <div className="landing">
+    <div className="app">
       <header>
-        <div className="logo">pypemesh</div>
+        <div className="logo">pypemesh <span className="badge">pre-alpha</span></div>
         <nav>
-          <a href="https://github.com/pypemesh/pypemesh" aria-label="GitHub">
+          <a href="https://github.com/mihirpatel231197-art/pypemesh" target="_blank" rel="noreferrer">
             GitHub
           </a>
-          <a href="#roadmap">Roadmap</a>
+          <a href="#about">About</a>
         </nav>
       </header>
 
       <main>
-        <section className="hero">
-          <h1>
-            The open-source pipe stress analysis platform.
-          </h1>
-          <p className="subtitle">
-            Validated ASME B31.3 solver. CAD-like modeler. Cloud-first. MIT
-            license. Built for engineers who want the power of Caesar II and
-            the ergonomics of modern tools.
+        <section className="modeler-section">
+          <div className="modeler-canvas">
+            <Modeler
+              project={sampleProject}
+              selectedNode={selectedNode}
+              selectedElement={selectedElement}
+              onSelectNode={setSelectedNode}
+              onSelectElement={setSelectedElement}
+              results={results}
+              resultCombo={resultCombo}
+            />
+          </div>
+          <Sidebar
+            project={sampleProject}
+            selectedNode={selectedNode}
+            selectedElement={selectedElement}
+            onSelectNode={(id) => { setSelectedNode(id); setSelectedElement(null); }}
+            onSelectElement={(id) => { setSelectedElement(id); setSelectedNode(null); }}
+            results={results}
+            resultCombo={resultCombo}
+            onSelectCombo={setResultCombo}
+            solving={solving}
+            onSolve={handleSolve}
+          />
+        </section>
+
+        <section id="about" className="about">
+          <h2>What you're looking at</h2>
+          <p>
+            This is a live pypemesh model — a 5-node U-loop pipe (6&quot; SCH 40 carbon steel)
+            with anchors at both ends, internal pressure of 50&nbsp;bar, and thermal expansion
+            from 20&nbsp;°C to 120&nbsp;°C. Click <b>Run B31.3 check</b> to evaluate sustained
+            and expansion stress per ASME B31.3 equations 23a and 17.
           </p>
-          <div className="cta">
-            <a className="btn-primary" href="#get-notified">Get notified at launch</a>
-            <a className="btn-secondary" href="https://github.com/pypemesh/pypemesh">
-              Star on GitHub
-            </a>
-          </div>
-          <div className="status">
-            <span className="dot" />
-            Pre-alpha · Phase B in progress · See roadmap
-          </div>
+          <p>
+            The solver is a real 3D beam FEA written in Python (pypemesh-core, MIT license).
+            All math derived from first principles in the <a href="https://github.com/mihirpatel231197-art/pypemesh/tree/main/docs/theory" target="_blank" rel="noreferrer">theory docs</a>.
+            55 unit + analytical tests pass on every commit, including a benchmark validation harness.
+          </p>
+          <p className="note">
+            If a backend is reachable at <code>VITE_API_BASE</code>, this calls
+            <code>/solve</code> for live results. Otherwise it shows mock results so the
+            demo still works.
+          </p>
         </section>
 
         <section className="features">
           <div className="feature">
-            <h3>Full code compliance</h3>
-            <p>ASME B31.3 at launch. B31.1, B31.4, EN 13480 on the roadmap.</p>
-          </div>
-          <div className="feature">
-            <h3>Modern 3D modeler</h3>
-            <p>Point-and-click or Caesar-style spreadsheet. Both, always in sync.</p>
-          </div>
-          <div className="feature">
             <h3>Validated solver</h3>
-            <p>Every release runs against published ASME, Markl, and textbook benchmarks.</p>
-          </div>
-          <div className="feature">
-            <h3>Cloud-first</h3>
-            <p>Collaborate in real time. Self-host if you prefer. Your data, your choice.</p>
+            <p>Cantilever PL³/3EI to 0.1%. Thermal EAαΔT to 0.1%. B31.3 PD/4t exact.</p>
           </div>
           <div className="feature">
             <h3>Open core</h3>
-            <p>MIT-licensed. Audit it. Fork it. Build on it.</p>
+            <p>MIT license. Audit it. Fork it. Extend it. No black boxes.</p>
           </div>
           <div className="feature">
-            <h3>Plugin SDK</h3>
-            <p>Codes, materials, CAD adapters as plugins. No vendor lock-in.</p>
+            <h3>Modern stack</h3>
+            <p>Python + SciPy + FastAPI + React + Three.js. Docker-deployable end-to-end.</p>
           </div>
-        </section>
-
-        <section id="roadmap" className="roadmap">
-          <h2>Roadmap</h2>
-          <ol>
-            <li><strong>Phase B</strong> · Open-source MVP · B31.3 static + dynamic · web modeler</li>
-            <li><strong>Phase B.1</strong> · B31.1, B31.4, non-linear, PCF import</li>
-            <li><strong>Phase B.2</strong> · AI support optimizer, local FEA, CAD plugins</li>
-            <li><strong>Phase C</strong> · Commercial: nuclear, enterprise, licensed materials</li>
-          </ol>
+          <div className="feature">
+            <h3>Code coverage</h3>
+            <p>ASME B31.3 today. B31.1, B31.4, EN 13480, nuclear on the roadmap.</p>
+          </div>
         </section>
 
         <footer>
-          <p>MIT licensed · Not yet for safety-critical work · Always have a licensed PE review output.</p>
+          <p>
+            MIT licensed · Engineering analysis software requires PE review before use in
+            safety-critical work. See <a href="https://github.com/mihirpatel231197-art/pypemesh/blob/main/LICENSE" target="_blank" rel="noreferrer">LICENSE</a>.
+          </p>
         </footer>
       </main>
     </div>
