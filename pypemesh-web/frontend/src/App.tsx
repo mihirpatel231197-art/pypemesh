@@ -5,7 +5,7 @@ import { SAMPLE_PROJECTS } from "./sample";
 import { solveProject } from "./api";
 import type { ModeShape, SolveResponse } from "./types";
 
-type CodeChoice = "B31.3" | "B31.1" | "B31.4";
+type CodeChoice = "B31.3" | "B31.1" | "B31.4" | "B31.8" | "EN-13480";
 
 export function App() {
   const [selectedSample, setSelectedSample] = useState<string>(SAMPLE_PROJECTS[0].id);
@@ -33,7 +33,7 @@ export function App() {
   async function handleSolve() {
     setSolving(true);
     try {
-      const res = await solveProject(project, selectedCode as "B31.3" | "B31.1");
+      const res = await solveProject(project, selectedCode);
       setResults(res);
       if (project.load_combinations.length > 0) {
         setResultCombo(project.load_combinations[0].id);
@@ -73,7 +73,9 @@ export function App() {
               <select value={selectedCode} onChange={(e) => setSelectedCode(e.target.value as CodeChoice)}>
                 <option value="B31.3">ASME B31.3 (process)</option>
                 <option value="B31.1">ASME B31.1 (power)</option>
-                <option value="B31.4">ASME B31.4 (pipeline)</option>
+                <option value="B31.4">ASME B31.4 (liquid pipeline)</option>
+                <option value="B31.8">ASME B31.8 (gas transmission)</option>
+                <option value="EN-13480">EN 13480 (European)</option>
               </select>
               {animatedMode && (
                 <div className="anim-badge">
