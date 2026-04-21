@@ -177,6 +177,65 @@ API_5L_X65 = Material(
     poisson=0.30,
 )
 
+API_5L_X70 = Material(
+    id="API-5L-X70",
+    name="API 5L Gr.X70 (High-strength pipeline)",
+    elastic_modulus=A106_GR_B.elastic_modulus,
+    thermal_expansion=A106_GR_B.thermal_expansion,
+    allowable_hot=[(293.15, 284e6), (373.15, 280e6), (473.15, 270e6)],
+    allowable_cold=284e6,
+    density=7850.0,
+    poisson=0.30,
+)
+
+API_5L_X80 = Material(
+    id="API-5L-X80",
+    name="API 5L Gr.X80 (High-strength pipeline)",
+    elastic_modulus=A106_GR_B.elastic_modulus,
+    thermal_expansion=A106_GR_B.thermal_expansion,
+    allowable_hot=[(293.15, 320e6), (373.15, 315e6), (473.15, 305e6)],
+    allowable_cold=320e6,
+    density=7850.0,
+    poisson=0.30,
+)
+
+API_5L_X100 = Material(
+    id="API-5L-X100",
+    name="API 5L Gr.X100 (Ultra-high-strength pipeline)",
+    elastic_modulus=A106_GR_B.elastic_modulus,
+    thermal_expansion=A106_GR_B.thermal_expansion,
+    allowable_hot=[(293.15, 435e6), (373.15, 430e6)],
+    allowable_cold=435e6,
+    density=7850.0,
+    poisson=0.30,
+)
+
+# Duplex / super-duplex stainless --------------------------------------------
+
+A789_S31803 = Material(
+    id="A789-S31803",
+    name="ASTM A789 UNS S31803 (Duplex 2205)",
+    elastic_modulus=[(293.15, 1.94e11), (373.15, 1.90e11), (473.15, 1.84e11)],
+    thermal_expansion=[(293.15, 13.0e-6), (373.15, 13.5e-6), (473.15, 14.0e-6)],
+    allowable_hot=[(293.15, 241e6), (373.15, 228e6), (473.15, 210e6)],
+    allowable_cold=241e6,
+    density=7800.0,
+    poisson=0.30,
+)
+
+# Nickel alloys (high-temp, corrosion) --------------------------------------
+
+ASTM_B444 = Material(
+    id="B444-N06625",
+    name="ASTM B444 UNS N06625 (Inconel 625)",
+    elastic_modulus=[(293.15, 2.07e11), (473.15, 1.97e11), (673.15, 1.83e11), (873.15, 1.68e11)],
+    thermal_expansion=[(293.15, 12.8e-6), (473.15, 13.1e-6), (673.15, 13.5e-6), (873.15, 14.2e-6)],
+    allowable_hot=[(293.15, 275e6), (473.15, 270e6), (673.15, 265e6), (873.15, 180e6)],
+    allowable_cold=275e6,
+    density=8440.0,
+    poisson=0.30,
+)
+
 # Plastics (open ASTM data) -------------------------------------------------
 
 HDPE_PE100 = Material(
@@ -196,7 +255,9 @@ ALL_MATERIALS = {
         A106_GR_B, A53_GR_B, A333_GR_6,
         A312_TP304, A312_TP316L, A312_TP321,
         A335_P11, A335_P22, A335_P91,
-        API_5L_X65,
+        API_5L_X65, API_5L_X70, API_5L_X80, API_5L_X100,
+        A789_S31803,
+        ASTM_B444,
         HDPE_PE100,
     ]
 }

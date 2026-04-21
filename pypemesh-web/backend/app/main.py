@@ -20,6 +20,8 @@ import pypemesh_core
 from pypemesh_core.codes.b31_1 import B31_1
 from pypemesh_core.codes.b31_3 import B31_3
 from pypemesh_core.codes.b31_4 import B31_4
+from pypemesh_core.codes.b31_8 import B31_8
+from pypemesh_core.codes.en_13480 import EN_13480
 from pypemesh_core.io.project import project_from_dict
 from pypemesh_core.io.report_pdf import generate_pdf_report
 from pypemesh_core.solver.assembly import assemble_global_mass, assemble_global_stiffness
@@ -31,6 +33,8 @@ CODE_REGISTRY = {
     "B31.3": B31_3,
     "B31.1": B31_1,
     "B31.4": B31_4,
+    "B31.8": B31_8,
+    "EN-13480": EN_13480,
 }
 
 app = FastAPI(
