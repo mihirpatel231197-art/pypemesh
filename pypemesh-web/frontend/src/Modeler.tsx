@@ -1,8 +1,8 @@
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import type { PipeProject, SolveResponse } from "./types";
+import type { ModeShape, PipeProject, SolveResponse } from "./types";
 
 interface Props {
   project: PipeProject;
@@ -12,6 +12,9 @@ interface Props {
   onSelectElement: (id: string | null) => void;
   results: SolveResponse | null;
   resultCombo: string | null;
+  animatedMode?: ModeShape | null;
+  animationSpeed?: number;
+  animationAmplitude?: number;
 }
 
 function stressColor(ratio: number): string {
@@ -22,6 +25,132 @@ function stressColor(ratio: number): string {
   return "#ef4444";
 }
 
+function AnimatedScene({
+  project, animatedMode, speed, amplitude,
+  selectedNode, selectedElement, onSelectNode, onSelectElement,
+  elementRatio, restrainedNodes,
+}: {
+  project: PipeProject;
+  animatedMode?: ModeShape | null;
+  speed: number;
+  amplitude: number;
+  selectedNode: string | null;
+  selectedElement: string | null;
+  onSelectNode: (id: string | null) => void;
+  onSelectElement: (id: string | null) => void;
+  elementRatio: Record<string, number>;
+  restrainedNodes: Set<string>;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+  const time = useRef(0);
+
+  useFrame((_state, delta) => {
+    time.current += delta * speed;
+  });
+
+  // Build animated node positions
+  const baseCoords: Record<string, [number, number, number]> = {};
+  project.nodes.forEach((n) => (baseCoords[n.id] = [n.x, n.y, n.z]));
+
+  return (
+    <group ref={groupRef}>
+      {project.elements.map((e) => {
+        const a = baseCoords[e.from_node];
+        const b = baseCoords[e.to_node];
+        if (!a || !b) return null;
+
+        // Apply mode-shape displacement when animating
+        let aPos = a;
+        let bPos = b;
+        if (animatedMode) {
+          const phase = Math.cos(2 * Math.PI * animatedMode.frequency_hz * time.current);
+          const dispA = animatedMode.node_displacements[e.from_node];
+          const dispB = animatedMode.node_displacements[e.to_node];
+          if (dispA) aPos = [a[0] + amplitude * phase * dispA[0],
+                              a[1] + amplitude * phase * dispA[1],
+                              a[2] + amplitude * phase * dispA[2]];
+          if (dispB) bPos = [b[0] + amplitude * phase * dispB[0],
+                              b[1] + amplitude * phase * dispB[1],
+                              b[2] + amplitude * phase * dispB[2]];
+        }
+
+        const start = new THREE.Vector3(...aPos);
+        const end = new THREE.Vector3(...bPos);
+        const dir = new THREE.Vector3().subVectors(end, start);
+        const length = dir.length();
+        const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+        const quat = new THREE.Quaternion().setFromUnitVectors(
+          new THREE.Vector3(0, 1, 0), dir.clone().normalize(),
+        );
+        const rotation = new THREE.Euler().setFromQuaternion(quat);
+        const radius = 0.04;
+        const ratio = elementRatio[e.id];
+        const color = animatedMode ? "#7c5cff" : (ratio !== undefined ? stressColor(ratio) : "#6b7280");
+        const isSelected = e.id === selectedElement;
+
+        return (
+          <mesh
+            key={e.id}
+            position={mid.toArray()}
+            rotation={rotation.toArray() as [number, number, number]}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              onSelectElement(e.id);
+              onSelectNode(null);
+            }}
+          >
+            <cylinderGeometry args={[radius, radius, length, 16]} />
+            <meshStandardMaterial
+              color={color}
+              emissive={isSelected ? "#3b82f6" : "#000000"}
+              emissiveIntensity={isSelected ? 0.6 : 0}
+              metalness={0.4}
+              roughness={0.5}
+            />
+          </mesh>
+        );
+      })}
+
+      {project.nodes.map((n) => {
+        let pos: [number, number, number] = [n.x, n.y, n.z];
+        if (animatedMode) {
+          const phase = Math.cos(2 * Math.PI * animatedMode.frequency_hz * time.current);
+          const disp = animatedMode.node_displacements[n.id];
+          if (disp) {
+            pos = [n.x + amplitude * phase * disp[0],
+                   n.y + amplitude * phase * disp[1],
+                   n.z + amplitude * phase * disp[2]];
+          }
+        }
+        const isSelected = n.id === selectedNode;
+        const isAnchor = restrainedNodes.has(n.id);
+        const color = isAnchor ? "#ef4444" : "#60a5fa";
+        return (
+          <mesh
+            key={n.id}
+            position={pos}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              onSelectNode(n.id);
+              onSelectElement(null);
+            }}
+          >
+            <sphereGeometry args={[isAnchor ? 0.1 : 0.07, 24, 24]} />
+            <meshStandardMaterial
+              color={color}
+              emissive={isSelected ? "#3b82f6" : "#000"}
+              emissiveIntensity={isSelected ? 0.8 : 0}
+              metalness={0.2}
+              roughness={0.4}
+            />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+
 export function Modeler({
   project,
   selectedNode,
@@ -30,6 +159,9 @@ export function Modeler({
   onSelectElement,
   results,
   resultCombo,
+  animatedMode,
+  animationSpeed = 1.0,
+  animationAmplitude = 0.5,
 }: Props) {
   const nodeIndex = useMemo(() => {
     const m: Record<string, [number, number, number]> = {};
@@ -73,6 +205,21 @@ export function Modeler({
       />
       <OrbitControls makeDefault enableDamping dampingFactor={0.1} />
 
+      {animatedMode ? (
+        <AnimatedScene
+          project={project}
+          animatedMode={animatedMode}
+          speed={animationSpeed}
+          amplitude={animationAmplitude}
+          selectedNode={selectedNode}
+          selectedElement={selectedElement}
+          onSelectNode={onSelectNode}
+          onSelectElement={onSelectElement}
+          elementRatio={elementRatio}
+          restrainedNodes={restrainedNodes}
+        />
+      ) : (
+        <>
       {/* Elements as cylinders between nodes */}
       {project.elements.map((e) => {
         const a = nodeIndex[e.from_node];
@@ -142,6 +289,8 @@ export function Modeler({
           </mesh>
         );
       })}
+        </>
+      )}
     </Canvas>
   );
 }

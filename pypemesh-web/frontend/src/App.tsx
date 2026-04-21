@@ -3,16 +3,20 @@ import { Modeler } from "./Modeler";
 import { Sidebar } from "./Sidebar";
 import { SAMPLE_PROJECTS } from "./sample";
 import { solveProject } from "./api";
-import type { SolveResponse } from "./types";
+import type { ModeShape, SolveResponse } from "./types";
+
+type CodeChoice = "B31.3" | "B31.1" | "B31.4";
 
 export function App() {
   const [selectedSample, setSelectedSample] = useState<string>(SAMPLE_PROJECTS[0].id);
-  const [selectedCode, setSelectedCode] = useState<"B31.3" | "B31.1">("B31.3");
+  const [selectedCode, setSelectedCode] = useState<CodeChoice>("B31.3");
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [results, setResults] = useState<SolveResponse | null>(null);
   const [resultCombo, setResultCombo] = useState<string | null>(null);
   const [solving, setSolving] = useState(false);
+  const [modesData, setModesData] = useState<ModeShape[] | null>(null);
+  const [animatedModeIndex, setAnimatedModeIndex] = useState<number | null>(null);
 
   const project = SAMPLE_PROJECTS.find((s) => s.id === selectedSample)!.project;
 
@@ -22,12 +26,14 @@ export function App() {
     setSelectedElement(null);
     setResults(null);
     setResultCombo(null);
+    setModesData(null);
+    setAnimatedModeIndex(null);
   }
 
   async function handleSolve() {
     setSolving(true);
     try {
-      const res = await solveProject(project, selectedCode);
+      const res = await solveProject(project, selectedCode as "B31.3" | "B31.1");
       setResults(res);
       if (project.load_combinations.length > 0) {
         setResultCombo(project.load_combinations[0].id);
@@ -36,6 +42,10 @@ export function App() {
       setSolving(false);
     }
   }
+
+  const animatedMode = (modesData && animatedModeIndex !== null)
+    ? modesData[animatedModeIndex] ?? null
+    : null;
 
   return (
     <div className="app">
@@ -60,10 +70,16 @@ export function App() {
                 ))}
               </select>
               <label>Code:</label>
-              <select value={selectedCode} onChange={(e) => setSelectedCode(e.target.value as "B31.3" | "B31.1")}>
+              <select value={selectedCode} onChange={(e) => setSelectedCode(e.target.value as CodeChoice)}>
                 <option value="B31.3">ASME B31.3 (process)</option>
                 <option value="B31.1">ASME B31.1 (power)</option>
+                <option value="B31.4">ASME B31.4 (pipeline)</option>
               </select>
+              {animatedMode && (
+                <div className="anim-badge">
+                  ▶ Mode {animatedMode.mode_index + 1} · {animatedMode.frequency_hz.toFixed(2)} Hz
+                </div>
+              )}
             </div>
             <Modeler
               project={project}
@@ -73,6 +89,9 @@ export function App() {
               onSelectElement={setSelectedElement}
               results={results}
               resultCombo={resultCombo}
+              animatedMode={animatedMode}
+              animationSpeed={1.5}
+              animationAmplitude={0.4}
             />
           </div>
           <Sidebar
@@ -86,21 +105,25 @@ export function App() {
             onSelectCombo={setResultCombo}
             solving={solving}
             onSolve={handleSolve}
+            animatedModeIndex={animatedModeIndex}
+            onSelectAnimatedMode={setAnimatedModeIndex}
+            onModesLoaded={setModesData}
           />
         </section>
 
         <section id="about" className="about">
           <h2>What you're looking at</h2>
           <p>
-            This is a live pypemesh model — a 5-node U-loop pipe (6&quot; SCH 40 carbon steel)
-            with anchors at both ends, internal pressure of 50&nbsp;bar, and thermal expansion
-            from 20&nbsp;°C to 120&nbsp;°C. Click <b>Run B31.3 check</b> to evaluate sustained
-            and expansion stress per ASME B31.3 equations 23a and 17.
+            Live pypemesh demo — pick from 5 piping models, choose ASME B31.3 (process),
+            B31.1 (power), or B31.4 (liquid pipeline), then click <b>Run code check</b>
+            for color-coded stress overlays. Click <b>Compute first 5 natural frequencies</b>
+            then click any mode to see it animate in 3D.
           </p>
           <p>
             The solver is a real 3D beam FEA written in Python (pypemesh-core, MIT license).
             All math derived from first principles in the <a href="https://github.com/mihirpatel231197-art/pypemesh/tree/main/docs/theory" target="_blank" rel="noreferrer">theory docs</a>.
-            55 unit + analytical tests pass on every commit, including a benchmark validation harness.
+            111+ unit and analytical tests pass on every commit. Validated to &lt;0.1% on
+            cantilever / thermal / modal benchmarks.
           </p>
           <p className="note">
             If a backend is reachable at <code>VITE_API_BASE</code>, this calls
@@ -112,19 +135,19 @@ export function App() {
         <section className="features">
           <div className="feature">
             <h3>Validated solver</h3>
-            <p>Cantilever PL³/3EI to 0.1%. Thermal EAαΔT to 0.1%. B31.3 PD/4t exact.</p>
+            <p>Cantilever PL³/3EI &lt;0.1%. Thermal EAαΔT &lt;0.1%. Modal first mode &lt;0.02%.</p>
+          </div>
+          <div className="feature">
+            <h3>3 codes shipping</h3>
+            <p>B31.3 process, B31.1 power, B31.4 pipeline. EN 13480 + nuclear on roadmap.</p>
+          </div>
+          <div className="feature">
+            <h3>Full dynamics</h3>
+            <p>Modal + response spectrum (SRSS/CQC) + time history (Newmark-β).</p>
           </div>
           <div className="feature">
             <h3>Open core</h3>
-            <p>MIT license. Audit it. Fork it. Extend it. No black boxes.</p>
-          </div>
-          <div className="feature">
-            <h3>Modern stack</h3>
-            <p>Python + SciPy + FastAPI + React + Three.js. Docker-deployable end-to-end.</p>
-          </div>
-          <div className="feature">
-            <h3>Code coverage</h3>
-            <p>ASME B31.3 today. B31.1, B31.4, EN 13480, nuclear on the roadmap.</p>
+            <p>MIT license. PCF file import. CLI tool. FastAPI backend. Audit it all.</p>
           </div>
         </section>
 

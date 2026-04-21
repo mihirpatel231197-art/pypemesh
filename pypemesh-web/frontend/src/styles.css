@@ -149,6 +149,16 @@ main { flex: 1; }
 .mode-num { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
 .mode-freq { font-family: ui-monospace, monospace; font-weight: 600; color: var(--accent); text-align: right; }
 .mode-period { font-family: ui-monospace, monospace; font-size: 10px; color: var(--muted); text-align: right; }
+.mode-hint { padding: 8px 10px; font-size: 10px; color: var(--muted); border-top: 1px solid var(--border); text-align: center; }
+.anim-badge {
+  background: var(--accent-2);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 8px;
+}
 
 .summary {
   margin-top: 12px;

@@ -130,6 +130,13 @@ export interface SolveResponse {
   };
 }
 
+export interface ModeShape {
+  mode_index: number;
+  frequency_hz: number;
+  period_s: number;
+  node_displacements: Record<string, [number, number, number]>;
+}
+
 export interface ModesResponse {
   status: string;
   project_name: string;
@@ -137,4 +144,5 @@ export interface ModesResponse {
   frequencies_hz: number[];
   angular_frequencies: number[];
   periods_s: number[];
+  mode_shapes?: ModeShape[];
 }

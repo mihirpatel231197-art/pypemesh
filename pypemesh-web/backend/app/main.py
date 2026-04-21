@@ -19,6 +19,7 @@ from pydantic import BaseModel
 import pypemesh_core
 from pypemesh_core.codes.b31_1 import B31_1
 from pypemesh_core.codes.b31_3 import B31_3
+from pypemesh_core.codes.b31_4 import B31_4
 from pypemesh_core.io.project import project_from_dict
 from pypemesh_core.io.report_pdf import generate_pdf_report
 from pypemesh_core.solver.assembly import assemble_global_mass, assemble_global_stiffness
@@ -29,6 +30,7 @@ from pypemesh_core.solver.dynamic import modal_analysis
 CODE_REGISTRY = {
     "B31.3": B31_3,
     "B31.1": B31_1,
+    "B31.4": B31_4,
 }
 
 app = FastAPI(
@@ -187,6 +189,16 @@ class ModesRequest(BaseModel):
     T_evaluation: float | None = None
 
 
+class ModeShape(BaseModel):
+    """Per-node displacement for a single mode (just translation, normalized)."""
+
+    mode_index: int
+    frequency_hz: float
+    period_s: float
+    # Per-node (dx, dy, dz) displacement, normalized to max|d| = 1
+    node_displacements: dict[str, list[float]]
+
+
 class ModesResponse(BaseModel):
     status: str
     project_name: str
@@ -194,11 +206,12 @@ class ModesResponse(BaseModel):
     frequencies_hz: list[float]
     angular_frequencies: list[float]
     periods_s: list[float]
+    mode_shapes: list[ModeShape] = []
 
 
 @app.post("/modes", response_model=ModesResponse)
 async def modes(req: ModesRequest) -> ModesResponse:
-    """Solve the eigenproblem for the lowest n_modes natural frequencies."""
+    """Solve the eigenproblem and return frequencies + normalized mode shapes."""
     try:
         project = project_from_dict(req.project)
     except Exception as e:
@@ -212,6 +225,31 @@ async def modes(req: ModesRequest) -> ModesResponse:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Modal solver error: {e}")
 
+    # Build per-mode per-node translations, normalized for visualization
+    import numpy as _np
+    shapes: list[ModeShape] = []
+    for i in range(len(result.frequencies_hz)):
+        phi = result.mode_shapes[:, i]
+        # Translation entries are at DOF offsets 0,1,2 within each 6-DOF node block
+        node_disp: dict[str, list[float]] = {}
+        peak = 0.0
+        for j, n in enumerate(project.nodes):
+            base = j * 6
+            d = [float(phi[base]), float(phi[base + 1]), float(phi[base + 2])]
+            mag = (d[0] ** 2 + d[1] ** 2 + d[2] ** 2) ** 0.5
+            if mag > peak:
+                peak = mag
+            node_disp[n.id] = d
+        if peak > 0:
+            for nid in node_disp:
+                node_disp[nid] = [v / peak for v in node_disp[nid]]
+        shapes.append(ModeShape(
+            mode_index=i,
+            frequency_hz=float(result.frequencies_hz[i]),
+            period_s=float(result.periods_s[i]) if result.periods_s[i] != float("inf") else 0.0,
+            node_displacements=node_disp,
+        ))
+
     return ModesResponse(
         status="ok",
         project_name=project.name,
@@ -219,6 +257,7 @@ async def modes(req: ModesRequest) -> ModesResponse:
         frequencies_hz=result.frequencies_hz.tolist(),
         angular_frequencies=result.angular_freq.tolist(),
         periods_s=[float(t) if t != float("inf") else 0.0 for t in result.periods_s],
+        mode_shapes=shapes,
     )
 
 

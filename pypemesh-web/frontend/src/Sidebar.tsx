@@ -13,6 +13,9 @@ interface Props {
   onSelectCombo: (id: string | null) => void;
   solving: boolean;
   onSolve: () => void;
+  animatedModeIndex?: number | null;
+  onSelectAnimatedMode?: (i: number | null) => void;
+  onModesLoaded?: (shapes: import("./types").ModeShape[] | null) => void;
 }
 
 function fmt(v: number, digits = 3): string {
@@ -21,18 +24,19 @@ function fmt(v: number, digits = 3): string {
   return v.toFixed(digits) + " Pa";
 }
 
-export function Sidebar({
-  project,
-  selectedNode,
-  selectedElement,
-  onSelectNode,
-  onSelectElement,
-  results,
-  resultCombo,
-  onSelectCombo,
-  solving,
-  onSolve,
-}: Props) {
+export function Sidebar(props: Props) {
+  const {
+    project,
+    selectedNode,
+    selectedElement,
+    onSelectNode,
+    onSelectElement,
+    results,
+    resultCombo,
+    onSelectCombo,
+    solving,
+    onSolve,
+  } = props;
   const restraintIndex = Object.fromEntries(project.restraints.map((r) => [r.node, r]));
   const node = selectedNode ? project.nodes.find((n) => n.id === selectedNode) : null;
   const element = selectedElement ? project.elements.find((e) => e.id === selectedElement) : null;
@@ -55,6 +59,7 @@ export function Sidebar({
     try {
       const r = await getModes(project, 5);
       setModes(r);
+      if (props.onModesLoaded) props.onModesLoaded(r.mode_shapes ?? null);
     } finally {
       setSolvingModes(false);
     }
@@ -113,12 +118,20 @@ export function Sidebar({
         {modes && (
           <div className="modes-table">
             {modes.frequencies_hz.slice(0, 5).map((f, i) => (
-              <div key={i} className="mode-row">
+              <div key={i} className="mode-row" style={{cursor: "pointer"}}
+                   onClick={() => {
+                     if (props.onSelectAnimatedMode) {
+                       props.onSelectAnimatedMode(props.animatedModeIndex === i ? null : i);
+                     }
+                   }}>
                 <span className="mode-num">Mode {i + 1}</span>
                 <span className="mode-freq">{f.toFixed(2)} Hz</span>
-                <span className="mode-period">T = {modes.periods_s[i].toFixed(3)} s</span>
+                <span className="mode-period">
+                  {props.animatedModeIndex === i ? "▶ animating" : `T = ${modes.periods_s[i].toFixed(3)} s`}
+                </span>
               </div>
             ))}
+            <div className="mode-hint">Click a mode to animate its shape →</div>
           </div>
         )}
       </section>
