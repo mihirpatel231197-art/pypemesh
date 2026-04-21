@@ -98,3 +98,16 @@ def test_solve_invalid_project_returns_400(client: TestClient) -> None:
 def test_unsupported_code_returns_400(client: TestClient, sample_project_dict: dict) -> None:
     r = client.post("/solve", json={"project": sample_project_dict, "code": "B31.1"})
     assert r.status_code == 400
+
+
+def test_report_endpoint_returns_pdf(client: TestClient, sample_project_dict: dict) -> None:
+    r = client.post("/report", json={
+        "project": sample_project_dict,
+        "company": "ACME",
+        "engineer": "J. Smith, PE",
+    })
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "application/pdf"
+    assert r.content.startswith(b"%PDF")
+    assert len(r.content) > 1000
+    assert "attachment" in r.headers.get("content-disposition", "")

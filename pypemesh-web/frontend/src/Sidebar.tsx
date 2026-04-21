@@ -1,4 +1,6 @@
+import { useState } from "react";
 import type { PipeProject, SolveResponse } from "./types";
+import { downloadReport } from "./api";
 
 interface Props {
   project: PipeProject;
@@ -34,6 +36,17 @@ export function Sidebar({
   const restraintIndex = Object.fromEntries(project.restraints.map((r) => [r.node, r]));
   const node = selectedNode ? project.nodes.find((n) => n.id === selectedNode) : null;
   const element = selectedElement ? project.elements.find((e) => e.id === selectedElement) : null;
+  const [reportStatus, setReportStatus] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDownload() {
+    setDownloading(true);
+    setReportStatus(null);
+    const r = await downloadReport(project);
+    setDownloading(false);
+    if (!r.ok) setReportStatus(r.message ?? "Download failed");
+    else setReportStatus("Downloaded.");
+  }
 
   // Per-combo summary
   const combos = project.load_combinations;
@@ -67,6 +80,15 @@ export function Sidebar({
             <div className="kv"><span>Checks</span><b>{results.summary.total_checks}</b></div>
             <div className="kv"><span>Failed</span><b>{results.summary.failed}</b></div>
             <div className="kv"><span>Max ratio</span><b>{results.summary.max_ratio.toFixed(3)}</b></div>
+            <button
+              className="btn-secondary"
+              onClick={handleDownload}
+              disabled={downloading}
+              style={{ marginTop: 8 }}
+            >
+              {downloading ? "Generating PDF…" : "Download PDF report"}
+            </button>
+            {reportStatus && <div className="report-status">{reportStatus}</div>}
           </div>
         )}
       </section>

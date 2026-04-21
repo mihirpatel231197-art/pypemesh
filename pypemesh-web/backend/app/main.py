@@ -13,11 +13,13 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 import pypemesh_core
 from pypemesh_core.codes.b31_3 import B31_3
 from pypemesh_core.io.project import project_from_dict
+from pypemesh_core.io.report_pdf import generate_pdf_report
 from pypemesh_core.solver.combinations import evaluate_combinations
 
 app = FastAPI(
@@ -125,6 +127,41 @@ async def solve(req: SolveRequest) -> SolveResponse:
             "failed": len(failed),
             "max_ratio": max_ratio,
             "overall_status": "fail" if failed else "pass",
+        },
+    )
+
+
+class ReportRequest(BaseModel):
+    project: dict[str, Any]
+    company: str = ""
+    engineer: str = ""
+    T_evaluation: float | None = None
+
+
+@app.post("/report")
+async def report(req: ReportRequest) -> Response:
+    """Generate a PDF stress analysis report for the given project."""
+    try:
+        project = project_from_dict(req.project)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid project: {e}")
+
+    T_eval = req.T_evaluation if req.T_evaluation is not None else 293.15
+    try:
+        combos = evaluate_combinations(project, T_eval=T_eval)
+        code_results = B31_3(T_evaluation=T_eval).evaluate(project, combinations=combos)
+        pdf_bytes = generate_pdf_report(
+            project, code_results, combinations=combos,
+            company=req.company, engineer=req.engineer,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Report error: {e}")
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{project.name}_b31_3_report.pdf"'
         },
     )
 

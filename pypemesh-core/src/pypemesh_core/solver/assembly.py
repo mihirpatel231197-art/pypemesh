@@ -11,6 +11,7 @@ from numpy.typing import NDArray
 from scipy.sparse import coo_matrix, csr_matrix
 
 from pypemesh_core.solver.elements.beam import beam_stiffness_global
+from pypemesh_core.solver.elements.elbow import elbow_h, elbow_stiffness_global
 from pypemesh_core.solver.materials import elastic_modulus_at, shear_modulus_at
 from pypemesh_core.solver.model import ElementType, Project
 from pypemesh_core.solver.sections import (
@@ -64,9 +65,9 @@ def assemble_global_stiffness(
     node_index = {n.id: n for n in project.nodes}
 
     for elem in project.elements:
-        if elem.type != ElementType.PIPE:
+        if elem.type not in (ElementType.PIPE, ElementType.ELBOW):
             raise NotImplementedError(
-                f"Element type {elem.type} not implemented in M1. See docs/MILESTONES.md."
+                f"Element type {elem.type} not implemented yet. See docs/MILESTONES.md."
             )
 
         n_start = node_index[elem.from_node]
@@ -83,7 +84,15 @@ def assemble_global_stiffness(
         I = second_moment_of_area(section, structural=True)
         J = polar_moment_of_area(section, structural=True)
 
-        K_e, T_e, L_e = beam_stiffness_global(p_start, p_end, E, G, A, I, I, J)
+        if elem.type == ElementType.ELBOW:
+            if elem.bend_radius is None:
+                raise ValueError(f"Elbow {elem.id} requires bend_radius")
+            h = elbow_h(section.outside_diameter, section.wall_thickness, elem.bend_radius)
+            K_e, T_e, L_e = elbow_stiffness_global(
+                p_start, p_end, E, G, A, I, J, elem.bend_radius, h
+            )
+        else:
+            K_e, T_e, L_e = beam_stiffness_global(p_start, p_end, E, G, A, I, I, J)
 
         d_start = dof_map[elem.from_node]
         d_end = dof_map[elem.to_node]

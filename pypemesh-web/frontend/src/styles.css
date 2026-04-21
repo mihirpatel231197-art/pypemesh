@@ -103,6 +103,21 @@ main { flex: 1; }
 .btn-primary:hover { background: #6cbaff; }
 .btn-primary:disabled { opacity: 0.6; cursor: progress; }
 
+.btn-secondary {
+  width: 100%;
+  background: var(--bg-elev-2);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-secondary:hover { border-color: var(--muted); background: var(--bg-elev); }
+.btn-secondary:disabled { opacity: 0.6; cursor: progress; }
+.report-status { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+
 .summary {
   margin-top: 12px;
   padding: 10px;
