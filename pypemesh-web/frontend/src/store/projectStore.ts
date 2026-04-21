@@ -93,8 +93,13 @@ const EMPTY_PROJECT: PipeProject = {
 
 const HISTORY_LIMIT = 200;
 
+function deepClone<T>(v: T): T {
+  // JSON-based clone — handles immer drafts (which structuredClone can't)
+  return JSON.parse(JSON.stringify(v)) as T;
+}
+
 function pushHistory(past: PipeProject[], project: PipeProject): PipeProject[] {
-  const next = [...past, structuredClone(project)];
+  const next = [...past, deepClone(project)];
   return next.length > HISTORY_LIMIT ? next.slice(next.length - HISTORY_LIMIT) : next;
 }
 
@@ -178,7 +183,7 @@ export const useProjectStore = create<ProjectStore>()(
     undo: () => set((s) => {
       const prev = s.past.pop();
       if (prev) {
-        s.future.push(structuredClone(s.project));
+        s.future.push(deepClone(s.project));
         s.project = prev;
         s.selectedNodeIds = [];
         s.selectedElementIds = [];
@@ -189,7 +194,7 @@ export const useProjectStore = create<ProjectStore>()(
     redo: () => set((s) => {
       const next = s.future.pop();
       if (next) {
-        s.past.push(structuredClone(s.project));
+        s.past.push(deepClone(s.project));
         s.project = next;
       }
     }),
