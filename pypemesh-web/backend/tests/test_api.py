@@ -96,8 +96,19 @@ def test_solve_invalid_project_returns_400(client: TestClient) -> None:
 
 
 def test_unsupported_code_returns_400(client: TestClient, sample_project_dict: dict) -> None:
-    r = client.post("/solve", json={"project": sample_project_dict, "code": "B31.1"})
+    r = client.post("/solve", json={"project": sample_project_dict, "code": "MADE-UP-CODE"})
     assert r.status_code == 400
+
+
+def test_b31_1_code_works(client: TestClient, sample_project_dict: dict) -> None:
+    """Backend /solve should accept B31.1 in addition to B31.3."""
+    r = client.post("/solve", json={"project": sample_project_dict, "code": "B31.1"})
+    assert r.status_code == 200
+    data = r.json()
+    assert data["code"] == "B31.1"
+    # B31.1 sustained uses equation 11A
+    sus = next(r for r in data["results"] if r["combination_id"] == "SUS")
+    assert sus["equation"] == "11A"
 
 
 def test_modes_endpoint(client: TestClient) -> None:

@@ -111,6 +111,42 @@ export const pumpDischargeProject: PipeProject = {
   code: "B31.3", code_version: "2022",
 };
 
+// 4b) Process header with branch tee and rigid offset
+export const teeBranchProject: PipeProject = {
+  schema_version: "0.1.0",
+  project: { name: "Process header with tee branch" },
+  nodes: [
+    { id: "A10", x: 0, y: 0, z: 0 },
+    { id: "T20", x: 3, y: 0, z: 0 },
+    { id: "A30", x: 6, y: 0, z: 0 },
+    { id: "B40", x: 3, y: 0, z: 2 },
+    { id: "A50", x: 3, y: 0, z: 3.5 },
+  ],
+  elements: [
+    { id: "E1", type: "pipe", from_node: "A10", to_node: "T20", section: "6-STD", material: "A106-B" },
+    { id: "E2", type: "tee", from_node: "T20", to_node: "A30", section: "6-STD", material: "A106-B" },
+    { id: "E3", type: "pipe", from_node: "T20", to_node: "B40", section: "6-STD", material: "A106-B" },
+    { id: "E4", type: "pipe", from_node: "B40", to_node: "A50", section: "6-STD", material: "A106-B" },
+  ],
+  sections: [STD_SECTION],
+  materials: [A106B],
+  restraints: [
+    { node: "A10", type: "anchor" },
+    { node: "A30", type: "anchor" },
+    { node: "A50", type: "anchor" },
+  ],
+  load_cases: [
+    { id: "W", kind: "weight" },
+    { id: "P1", kind: "pressure", pressure: 5e6 },
+    { id: "T1", kind: "thermal", temperature: 393.15 },
+  ],
+  load_combinations: [
+    { id: "SUS", cases: ["W", "P1"], category: "sustained" },
+    { id: "EXP", cases: ["T1"], category: "expansion" },
+  ],
+  code: "B31.3", code_version: "2022",
+};
+
 // 4) Long horizontal run with intermediate support
 export const longRunProject: PipeProject = {
   schema_version: "0.1.0",
@@ -150,6 +186,7 @@ export const SAMPLE_PROJECTS: { id: string; label: string; project: PipeProject 
   { id: "u-loop", label: "U-loop (thermal expansion absorber)", project: uLoopProject },
   { id: "cantilever", label: "Cantilever (free thermal growth)", project: cantileverProject },
   { id: "pump-discharge", label: "Pump discharge riser", project: pumpDischargeProject },
+  { id: "tee-branch", label: "Process header with tee branch", project: teeBranchProject },
   { id: "long-run", label: "Long horizontal run", project: longRunProject },
 ];
 

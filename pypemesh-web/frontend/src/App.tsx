@@ -7,6 +7,7 @@ import type { SolveResponse } from "./types";
 
 export function App() {
   const [selectedSample, setSelectedSample] = useState<string>(SAMPLE_PROJECTS[0].id);
+  const [selectedCode, setSelectedCode] = useState<"B31.3" | "B31.1">("B31.3");
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [results, setResults] = useState<SolveResponse | null>(null);
@@ -26,7 +27,7 @@ export function App() {
   async function handleSolve() {
     setSolving(true);
     try {
-      const res = await solveProject(project);
+      const res = await solveProject(project, selectedCode);
       setResults(res);
       if (project.load_combinations.length > 0) {
         setResultCombo(project.load_combinations[0].id);
@@ -52,11 +53,16 @@ export function App() {
         <section className="modeler-section">
           <div className="modeler-canvas">
             <div className="sample-picker">
-              <label>Sample model:</label>
+              <label>Sample:</label>
               <select value={selectedSample} onChange={(e) => handleSelectSample(e.target.value)}>
                 {SAMPLE_PROJECTS.map((s) => (
                   <option key={s.id} value={s.id}>{s.label}</option>
                 ))}
+              </select>
+              <label>Code:</label>
+              <select value={selectedCode} onChange={(e) => setSelectedCode(e.target.value as "B31.3" | "B31.1")}>
+                <option value="B31.3">ASME B31.3 (process)</option>
+                <option value="B31.1">ASME B31.1 (power)</option>
               </select>
             </div>
             <Modeler

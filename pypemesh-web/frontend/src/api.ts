@@ -12,19 +12,22 @@ const mockModes: ModesResponse = {
 
 const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "http://localhost:8000";
 
-export async function solveProject(project: PipeProject): Promise<SolveResponse> {
+export async function solveProject(
+  project: PipeProject,
+  code: "B31.3" | "B31.1" = "B31.3",
+): Promise<SolveResponse> {
   try {
     const res = await fetch(`${API_BASE}/solve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ project, code: "B31.3" }),
+      body: JSON.stringify({ project, code }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
     return (await res.json()) as SolveResponse;
   } catch (err) {
     console.warn("Backend unreachable, using mock response:", err);
-    await new Promise((r) => setTimeout(r, 600)); // mimic latency
-    return mockResponse;
+    await new Promise((r) => setTimeout(r, 600));
+    return { ...mockResponse, code };
   }
 }
 

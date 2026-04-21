@@ -17,12 +17,19 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 import pypemesh_core
+from pypemesh_core.codes.b31_1 import B31_1
 from pypemesh_core.codes.b31_3 import B31_3
 from pypemesh_core.io.project import project_from_dict
 from pypemesh_core.io.report_pdf import generate_pdf_report
 from pypemesh_core.solver.assembly import assemble_global_mass, assemble_global_stiffness
 from pypemesh_core.solver.combinations import evaluate_combinations
 from pypemesh_core.solver.dynamic import modal_analysis
+
+
+CODE_REGISTRY = {
+    "B31.3": B31_3,
+    "B31.1": B31_1,
+}
 
 app = FastAPI(
     title="pypemesh API",
@@ -87,14 +94,18 @@ async def solve(req: SolveRequest) -> SolveResponse:
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid project: {e}")
 
-    if req.code != "B31.3":
-        raise HTTPException(status_code=400, detail=f"Code {req.code} not implemented (only B31.3)")
+    if req.code not in CODE_REGISTRY:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Code {req.code} not implemented. Supported: {list(CODE_REGISTRY)}",
+        )
 
     T_eval = req.T_evaluation if req.T_evaluation is not None else 293.15
 
     try:
         combos = evaluate_combinations(project, T_eval=T_eval)
-        checker = B31_3(T_evaluation=T_eval)
+        CodeCls = CODE_REGISTRY[req.code]
+        checker = CodeCls(T_evaluation=T_eval)
         results = checker.evaluate(project, combinations=combos)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Solver error: {e}")
@@ -149,9 +160,11 @@ async def report(req: ReportRequest) -> Response:
         raise HTTPException(status_code=400, detail=f"Invalid project: {e}")
 
     T_eval = req.T_evaluation if req.T_evaluation is not None else 293.15
+    code_id = project.code if project.code in CODE_REGISTRY else "B31.3"
     try:
         combos = evaluate_combinations(project, T_eval=T_eval)
-        code_results = B31_3(T_evaluation=T_eval).evaluate(project, combinations=combos)
+        CodeCls = CODE_REGISTRY[code_id]
+        code_results = CodeCls(T_evaluation=T_eval).evaluate(project, combinations=combos)
         pdf_bytes = generate_pdf_report(
             project, code_results, combinations=combos,
             company=req.company, engineer=req.engineer,
