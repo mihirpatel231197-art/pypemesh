@@ -59,11 +59,16 @@ pypemesh/
 git clone https://github.com/mihirpatel231197-art/pypemesh.git
 cd pypemesh/pypemesh-core
 pip install -e ".[dev]"
-pytest                       # 78 tests pass in ~1s
-pypemesh bench               # validation suite
+pytest                       # 141 tests pass in ~2s
+pypemesh bench               # validation suite (3/3 pass)
+pypemesh codes               # list 9 supported codes
+pypemesh materials           # list 25 curated materials
 ```
 
-Then try the live web demo: **https://pypemesh.vercel.app**
+Live sites:
+- **App:** https://pypemesh.vercel.app — interactive 3D modeler, 9 codes, mode animation
+- **Docs:** https://mihirpatel231197-art.github.io/pypemesh/ — full documentation + theory derivations
+- **Repo:** https://github.com/mihirpatel231197-art/pypemesh
 
 For practical examples (Python API, CLI, REST API), see [USAGE.md](USAGE.md).
 
