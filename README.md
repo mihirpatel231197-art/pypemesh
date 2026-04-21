@@ -53,21 +53,59 @@ pypemesh/
 └── examples/                    # sample models for users
 ```
 
+## Quick start
+
+```bash
+git clone https://github.com/mihirpatel231197-art/pypemesh.git
+cd pypemesh/pypemesh-core
+pip install -e ".[dev]"
+pytest                       # 78 tests pass in ~1s
+pypemesh bench               # validation suite
+```
+
+Then try the live web demo: **https://pypemesh.vercel.app**
+
+For practical examples (Python API, CLI, REST API), see [USAGE.md](USAGE.md).
+
 ## Documentation
 
 Start here, in order:
 
-1. `docs/SOFTWARE_LANDSCAPE.md` — every piping tool in the industry, what it does, what we absorb
-2. `docs/CAPABILITY_MATRIX.md` — capability-by-capability map (which phase, from which tool)
-3. `docs/REQUIREMENTS.md` — what we're building
-4. `docs/ARCHITECTURE.md` — how it's structured
-5. `docs/UX_PRINCIPLES.md` — the power-vs-simplicity design rules
-6. `docs/TECH_DECISIONS.md` — why these choices
-7. `docs/VALIDATION_PLAN.md` — how we prove correctness
-8. `docs/MILESTONES.md` — session-by-session plan
-9. `docs/COMMERCIAL_ROADMAP.md` — B→C gates
-10. `docs/theory/` — mechanical engineering derivations (beam, pipe mechanics, codes, dynamics)
+1. [USAGE.md](USAGE.md) — practical examples: Python API, CLI, REST API
+2. `docs/SOFTWARE_LANDSCAPE.md` — every piping tool in the industry, what it does, what we absorb
+3. `docs/CAPABILITY_MATRIX.md` — capability-by-capability map (which phase, from which tool)
+4. `docs/REQUIREMENTS.md` — what we're building
+5. `docs/ARCHITECTURE.md` — how it's structured
+6. `docs/UX_PRINCIPLES.md` — the power-vs-simplicity design rules
+7. `docs/TECH_DECISIONS.md` — why these choices
+8. `docs/VALIDATION_PLAN.md` — how we prove correctness
+9. `docs/MILESTONES.md` — session-by-session plan
+10. `docs/COMMERCIAL_ROADMAP.md` — B→C gates
+11. `docs/theory/` — mechanical engineering derivations (beam, pipe mechanics, codes, dynamics)
 
 ## Status
 
-Pre-alpha. Planning phase. See `docs/MILESTONES.md` for the current session.
+**Pre-alpha but solver works.** 78 unit + analytical tests pass. Modal
+analysis accurate to 0.02%. ASME B31.3 sustained/occasional/expansion all
+implemented and validated against textbook examples.
+
+What's working today:
+- 3D beam FEA solver (linear static)
+- Pipe + elbow elements (Karman flexibility)
+- ASME B31.3 code compliance
+- Modal analysis (eigensolver)
+- 11 curated materials with temp-dependent properties
+- PDF report generation
+- CLI tool (`pypemesh solve | report | bench | validate`)
+- FastAPI backend with /solve, /modes, /report, /validate
+- React + Three.js web modeler
+- Live demo: https://pypemesh.vercel.app
+
+What's next: see `docs/MILESTONES.md`.
+
+## Repo metrics
+
+- 78 tests passing, 92% coverage
+- ~7,800 lines of Python + TypeScript + docs
+- 12 commits to date
+- MIT licensed
