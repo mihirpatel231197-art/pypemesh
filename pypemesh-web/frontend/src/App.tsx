@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Modeler } from "./Modeler";
 import { Sidebar } from "./Sidebar";
+import { Spreadsheet } from "./Spreadsheet";
 import { SAMPLE_PROJECTS } from "./sample";
 import { solveProject } from "./api";
 import type { ModeShape, SolveResponse } from "./types";
@@ -8,11 +9,14 @@ import type { ModeShape, SolveResponse } from "./types";
 type CodeChoice =
   | "B31.3" | "B31.1" | "B31.4" | "B31.5"
   | "B31.8" | "B31.9" | "B31.12"
-  | "CSA-Z662" | "EN-13480";
+  | "CSA-Z662" | "DNV-ST-F101" | "EN-13480";
+
+type ViewMode = "3d" | "spreadsheet";
 
 export function App() {
   const [selectedSample, setSelectedSample] = useState<string>(SAMPLE_PROJECTS[0].id);
   const [selectedCode, setSelectedCode] = useState<CodeChoice>("B31.3");
+  const [viewMode, setViewMode] = useState<ViewMode>("3d");
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [results, setResults] = useState<SolveResponse | null>(null);
@@ -82,26 +86,45 @@ export function App() {
                 <option value="B31.9">ASME B31.9 (building services)</option>
                 <option value="B31.12">ASME B31.12 (hydrogen)</option>
                 <option value="CSA-Z662">CSA Z662 (Canadian pipeline)</option>
+                <option value="DNV-ST-F101">DNV-ST-F101 (offshore)</option>
                 <option value="EN-13480">EN 13480 (European)</option>
               </select>
+              <div className="view-toggle">
+                <button
+                  className={`view-btn ${viewMode === "3d" ? "active" : ""}`}
+                  onClick={() => setViewMode("3d")}
+                >
+                  3D
+                </button>
+                <button
+                  className={`view-btn ${viewMode === "spreadsheet" ? "active" : ""}`}
+                  onClick={() => setViewMode("spreadsheet")}
+                >
+                  Table
+                </button>
+              </div>
               {animatedMode && (
                 <div className="anim-badge">
                   ▶ Mode {animatedMode.mode_index + 1} · {animatedMode.frequency_hz.toFixed(2)} Hz
                 </div>
               )}
             </div>
-            <Modeler
-              project={project}
-              selectedNode={selectedNode}
-              selectedElement={selectedElement}
-              onSelectNode={setSelectedNode}
-              onSelectElement={setSelectedElement}
-              results={results}
-              resultCombo={resultCombo}
-              animatedMode={animatedMode}
-              animationSpeed={1.5}
-              animationAmplitude={0.4}
-            />
+            {viewMode === "3d" ? (
+              <Modeler
+                project={project}
+                selectedNode={selectedNode}
+                selectedElement={selectedElement}
+                onSelectNode={setSelectedNode}
+                onSelectElement={setSelectedElement}
+                results={results}
+                resultCombo={resultCombo}
+                animatedMode={animatedMode}
+                animationSpeed={1.5}
+                animationAmplitude={0.4}
+              />
+            ) : (
+              <Spreadsheet project={project} results={results} />
+            )}
           </div>
           <Sidebar
             project={project}
