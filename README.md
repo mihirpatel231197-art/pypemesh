@@ -57,13 +57,16 @@ pypemesh/
 
 Start here, in order:
 
-1. `docs/REQUIREMENTS.md` — what we're building
-2. `docs/ARCHITECTURE.md` — how it's structured
-3. `docs/UX_PRINCIPLES.md` — the power-vs-simplicity design rules
-4. `docs/TECH_DECISIONS.md` — why these choices
-5. `docs/VALIDATION_PLAN.md` — how we prove correctness
-6. `docs/MILESTONES.md` — session-by-session plan
-7. `docs/COMMERCIAL_ROADMAP.md` — B→C gates
+1. `docs/SOFTWARE_LANDSCAPE.md` — every piping tool in the industry, what it does, what we absorb
+2. `docs/CAPABILITY_MATRIX.md` — capability-by-capability map (which phase, from which tool)
+3. `docs/REQUIREMENTS.md` — what we're building
+4. `docs/ARCHITECTURE.md` — how it's structured
+5. `docs/UX_PRINCIPLES.md` — the power-vs-simplicity design rules
+6. `docs/TECH_DECISIONS.md` — why these choices
+7. `docs/VALIDATION_PLAN.md` — how we prove correctness
+8. `docs/MILESTONES.md` — session-by-session plan
+9. `docs/COMMERCIAL_ROADMAP.md` — B→C gates
+10. `docs/theory/` — mechanical engineering derivations (beam, pipe mechanics, codes, dynamics)
 
 ## Status
 
