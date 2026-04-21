@@ -1,0 +1,9 @@
+{
+  "_description": "L-bend thermal absorber — a classic pipe stress teaching example (Peng & Peng Ch 5 style). 3m horizontal + 3m vertical carbon-steel pipe with anchors at both ends, 50 bar internal pressure, 20→120°C thermal expansion. The thermal growth of the horizontal leg pushes the corner, which is absorbed by bending in the vertical leg. Both sustained and expansion stress are moderate — the L-bend geometry is a natural flexibility.",
+  "stress_ratios": {
+    "E1:SUS": 0.234,
+    "E2:SUS": 0.226,
+    "E1:EXP": 0.125,
+    "E2:EXP": 0.125
+  }
+}

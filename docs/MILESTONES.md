@@ -1,23 +1,40 @@
 # Milestones
 
-**Version:** 0.1
-**Status:** Living — updated every session.
+**Version:** 0.2
+**Status:** Living — updated every session. Current as of v0.1.0a0 release.
 
-Session-by-session plan for Phase B (open-source MVP). Ordered by dependency.
-Each session = one working block (~4-6 hours of focused work). Adjust as
-reality intervenes.
+Session-by-session plan for Phase B (open-source MVP).
 
-## Milestone summary
+## Status summary (as of v0.1.0a0)
 
-| Milestone | Sessions | Output |
+| Milestone | Status | What shipped |
 |---|---|---|
-| **M0: Foundation** | 1-3 | Planning docs, repo scaffold, CI, Vercel/Railway deployed landing page |
-| **M1: Solver spine** | 4-10 | Static linear solver runs on 5-node beam test |
-| **M2: First benchmark** | 11-15 | B31.3 Appendix S passes |
-| **M3: Modeler MVP** | 16-25 | Web UI builds + solves a 10-node model end-to-end |
-| **M4: Non-linear + dynamic** | 26-35 | Gaps/friction, modal, response spectrum |
-| **M5: Validation suite** | 36-45 | All Layer 1-5 benchmarks pass |
-| **M6: B release** | 46-50 | Documentation, examples, public release |
+| **M0: Foundation** | ✅ complete | Planning docs, repo, git, Vercel, CI |
+| **M1: Solver spine** | ✅ complete | Static linear solver, 29 analytical tests pass, <0.1% accuracy |
+| **M2: First code (B31.3)** | ✅ complete | Full B31.3 equations + SIF + B31J tables |
+| **M2b: Elbow + extra elements** | ✅ complete | Elbow (Karman flex), Tee, Rigid, Spring |
+| **M2c: Second code (B31.1)** | ✅ complete | B31.1 power piping with different allowables |
+| **M3: Modeler MVP** | ✅ complete | React + Three.js viewport, 5 samples, code picker |
+| **M3a: JSON I/O + API** | ✅ complete | FastAPI /solve, /modes, /report, /validate |
+| **M3b: PDF reports** | ✅ complete | ASME-style report via ReportLab |
+| **M3c: CLI** | ✅ complete | `pypemesh solve|validate|report|bench|version` |
+| **M4a: Modal analysis** | ✅ complete | Eigensolver, 0.02% accuracy vs analytical |
+| **M4b: Response spectrum** | ✅ complete | SRSS/CQC/ABS + ASCE-7 built-in spectrum |
+| **M4c: Time history** | 🔜 next | Newmark-β direct integration |
+| **M4d: Non-linear** | 🔜 | Gaps, friction, unilateral supports |
+| **M5: Validation suite** | 🟡 partial | 2 benchmarks; target: 10+ incl. Peng, Markl, Appendix S |
+| **M6: B release** | 🟡 partial | USAGE.md done; docs site + more materials still to do |
+
+## Phase B stats as of v0.1.0a0
+
+- **94 tests passing** (93% coverage)
+- **2 validation benchmarks passing**
+- **18 commits** to main
+- **Deployed:** https://pypemesh.vercel.app (frontend) + GitHub source
+- **~10,500 lines** of Python + TypeScript + docs
+- **Validated accuracy:** PL³/3EI <0.1%, thermal EAαΔT <0.1%, modal <0.02%, SIF exact
+
+## Original 50-session plan (below, for reference)
 
 ## Session-by-session (M0 to M6)
 
