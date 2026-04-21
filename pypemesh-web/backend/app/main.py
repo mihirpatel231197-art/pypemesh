@@ -26,6 +26,7 @@ from pypemesh_core.codes.b31_9 import B31_9
 from pypemesh_core.codes.b31_12 import B31_12
 from pypemesh_core.codes.csa_z662 import CSA_Z662
 from pypemesh_core.codes.en_13480 import EN_13480
+from pypemesh_core.codes.nuclear_section_iii import NuclearSectionIII
 from pypemesh_core.io.project import project_from_dict
 from pypemesh_core.io.report_pdf import generate_pdf_report
 from pypemesh_core.solver.assembly import assemble_global_mass, assemble_global_stiffness
@@ -43,6 +44,7 @@ CODE_REGISTRY = {
     "B31.12": B31_12,
     "CSA-Z662": CSA_Z662,
     "EN-13480": EN_13480,
+    "ASME-III-NC": NuclearSectionIII,
 }
 
 app = FastAPI(

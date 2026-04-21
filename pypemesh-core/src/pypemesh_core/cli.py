@@ -27,6 +27,7 @@ from pypemesh_core.codes.b31_9 import B31_9
 from pypemesh_core.codes.b31_12 import B31_12
 from pypemesh_core.codes.csa_z662 import CSA_Z662
 from pypemesh_core.codes.en_13480 import EN_13480
+from pypemesh_core.codes.nuclear_section_iii import NuclearSectionIII
 from pypemesh_core.io.pcf import load_pcf
 from pypemesh_core.io.project import load_project, save_project
 from pypemesh_core.io.report_pdf import generate_pdf_report
@@ -38,6 +39,7 @@ CODE_REGISTRY = {
     "B31.3": B31_3, "B31.1": B31_1, "B31.4": B31_4, "B31.5": B31_5,
     "B31.8": B31_8, "B31.9": B31_9, "B31.12": B31_12,
     "CSA-Z662": CSA_Z662, "EN-13480": EN_13480,
+    "ASME-III-NC": NuclearSectionIII,
 }
 
 

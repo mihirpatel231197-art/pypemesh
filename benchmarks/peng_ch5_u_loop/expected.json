@@ -1,0 +1,14 @@
+{
+  "_description": "Peng & Peng Chapter 5 style U-loop thermal expansion absorber — 6\" SCH 40 carbon steel pipe, anchored at both ends, 50 bar internal pressure, 20→120°C thermal expansion. The U-loop absorbs thermal growth via bending in the perpendicular legs. This benchmark exercises: straight pipe in 2 directions, right-angle corners, sustained (weight + pressure), expansion (thermal only), B31.3 eq 23a and eq 17.",
+  "_reference": "Peng, L.-C. & Peng, T.-L. (2009). Pipe Stress Engineering. ASME Press. Chapter 5 worked examples.",
+  "stress_ratios": {
+    "E1:SUS": 0.269,
+    "E2:SUS": 0.254,
+    "E3:SUS": 0.233,
+    "E4:SUS": 0.243,
+    "E1:EXP": 0.066,
+    "E2:EXP": 0.091,
+    "E3:EXP": 0.090,
+    "E4:EXP": 0.130
+  }
+}
