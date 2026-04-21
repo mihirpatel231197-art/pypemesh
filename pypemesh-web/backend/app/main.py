@@ -20,7 +20,11 @@ import pypemesh_core
 from pypemesh_core.codes.b31_1 import B31_1
 from pypemesh_core.codes.b31_3 import B31_3
 from pypemesh_core.codes.b31_4 import B31_4
+from pypemesh_core.codes.b31_5 import B31_5
 from pypemesh_core.codes.b31_8 import B31_8
+from pypemesh_core.codes.b31_9 import B31_9
+from pypemesh_core.codes.b31_12 import B31_12
+from pypemesh_core.codes.csa_z662 import CSA_Z662
 from pypemesh_core.codes.en_13480 import EN_13480
 from pypemesh_core.io.project import project_from_dict
 from pypemesh_core.io.report_pdf import generate_pdf_report
@@ -33,7 +37,11 @@ CODE_REGISTRY = {
     "B31.3": B31_3,
     "B31.1": B31_1,
     "B31.4": B31_4,
+    "B31.5": B31_5,
     "B31.8": B31_8,
+    "B31.9": B31_9,
+    "B31.12": B31_12,
+    "CSA-Z662": CSA_Z662,
     "EN-13480": EN_13480,
 }
 
