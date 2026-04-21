@@ -1,25 +1,35 @@
 import { useState } from "react";
 import { Modeler } from "./Modeler";
 import { Sidebar } from "./Sidebar";
-import { sampleProject } from "./sample";
+import { SAMPLE_PROJECTS } from "./sample";
 import { solveProject } from "./api";
 import type { SolveResponse } from "./types";
 
 export function App() {
+  const [selectedSample, setSelectedSample] = useState<string>(SAMPLE_PROJECTS[0].id);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [results, setResults] = useState<SolveResponse | null>(null);
   const [resultCombo, setResultCombo] = useState<string | null>(null);
   const [solving, setSolving] = useState(false);
 
+  const project = SAMPLE_PROJECTS.find((s) => s.id === selectedSample)!.project;
+
+  function handleSelectSample(id: string) {
+    setSelectedSample(id);
+    setSelectedNode(null);
+    setSelectedElement(null);
+    setResults(null);
+    setResultCombo(null);
+  }
+
   async function handleSolve() {
     setSolving(true);
     try {
-      const res = await solveProject(sampleProject);
+      const res = await solveProject(project);
       setResults(res);
-      // Default to first combination for coloring
-      if (sampleProject.load_combinations.length > 0) {
-        setResultCombo(sampleProject.load_combinations[0].id);
+      if (project.load_combinations.length > 0) {
+        setResultCombo(project.load_combinations[0].id);
       }
     } finally {
       setSolving(false);
@@ -41,8 +51,16 @@ export function App() {
       <main>
         <section className="modeler-section">
           <div className="modeler-canvas">
+            <div className="sample-picker">
+              <label>Sample model:</label>
+              <select value={selectedSample} onChange={(e) => handleSelectSample(e.target.value)}>
+                {SAMPLE_PROJECTS.map((s) => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
+              </select>
+            </div>
             <Modeler
-              project={sampleProject}
+              project={project}
               selectedNode={selectedNode}
               selectedElement={selectedElement}
               onSelectNode={setSelectedNode}
@@ -52,7 +70,7 @@ export function App() {
             />
           </div>
           <Sidebar
-            project={sampleProject}
+            project={project}
             selectedNode={selectedNode}
             selectedElement={selectedElement}
             onSelectNode={(id) => { setSelectedNode(id); setSelectedElement(null); }}

@@ -59,6 +59,31 @@ main { flex: 1; }
   background: #0b0d10;
 }
 
+.sample-picker {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  background: rgba(18, 21, 26, 0.92);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.sample-picker label { color: var(--muted); }
+.sample-picker select {
+  background: var(--bg-elev-2);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
 .sidebar {
   border-left: 1px solid var(--border);
   background: var(--bg-elev);
