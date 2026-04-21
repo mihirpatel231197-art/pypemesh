@@ -1,12 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { DesignViewport } from "./components/DesignViewport";
 import { Modeler } from "./Modeler";
-import { Sidebar } from "./Sidebar";
-import { Spreadsheet } from "./Spreadsheet";
+import { Toolbar } from "./components/Toolbar";
+import { PropertyEditor } from "./components/PropertyEditor";
+import { LibraryBrowser } from "./components/LibraryBrowser";
+import { LoadCaseEditor } from "./components/LoadCaseEditor";
+import { ImportExportBar } from "./components/ImportExportBar";
 import { ShortcutHelp } from "./ShortcutHelp";
 import { SAMPLE_PROJECTS } from "./sample";
 import { solveProject } from "./api";
 import { useKeyboardShortcuts } from "./useKeyboard";
-import { useAutosave } from "./useAutosave";
+import { useProjectStore } from "./store/projectStore";
 import type { ModeShape, SolveResponse } from "./types";
 
 type CodeChoice =
@@ -14,45 +18,48 @@ type CodeChoice =
   | "B31.8" | "B31.9" | "B31.12"
   | "CSA-Z662" | "DNV-ST-F101" | "EN-13480";
 
-type ViewMode = "3d" | "spreadsheet";
-
 export function App() {
-  const [selectedSample, setSelectedSample] = useState<string>(SAMPLE_PROJECTS[0].id);
+  const project = useProjectStore((s) => s.project);
+  const setProject = useProjectStore((s) => s.setProject);
+  const mode = useProjectStore((s) => s.mode);
+  const setMode = useProjectStore((s) => s.setMode);
+  const undo = useProjectStore((s) => s.undo);
+  const redo = useProjectStore((s) => s.redo);
+  const clearSelection = useProjectStore((s) => s.clearSelection);
+  const setTool = useProjectStore((s) => s.setTool);
+
   const [selectedCode, setSelectedCode] = useState<CodeChoice>("B31.3");
-  const [viewMode, setViewMode] = useState<ViewMode>("3d");
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [results, setResults] = useState<SolveResponse | null>(null);
   const [resultCombo, setResultCombo] = useState<string | null>(null);
   const [solving, setSolving] = useState(false);
-  const [modesData, setModesData] = useState<ModeShape[] | null>(null);
-  const [animatedModeIndex, setAnimatedModeIndex] = useState<number | null>(null);
+  const [modesData] = useState<ModeShape[] | null>(null);
+  const [animatedModeIndex] = useState<number | null>(null);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+  const [samplePicker, setSamplePicker] = useState<string>("u-loop");
 
-  const project = SAMPLE_PROJECTS.find((s) => s.id === selectedSample)!.project;
+  useEffect(() => {
+    if (project.nodes.length === 0) {
+      setProject(SAMPLE_PROJECTS[0].project);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Autosave session state (sample, code, results) to localStorage
-  useAutosave({ selectedSample, selectedCode, viewMode, resultCombo });
-
-  const shortcuts = [
-    { key: "?", description: "Show this shortcut help", handler: () => setShortcutHelpOpen(true) },
-    { key: "r", description: "Run code check", handler: () => handleSolve() },
-    { key: "t", description: "Toggle 3D / Table view", handler: () => setViewMode((m) => m === "3d" ? "spreadsheet" : "3d") },
-    { key: "escape", description: "Clear selection / close help",
-      handler: () => { setSelectedNode(null); setSelectedElement(null); setShortcutHelpOpen(false); } },
-    { key: "1", description: "Switch to first sample", handler: () => handleSelectSample(SAMPLE_PROJECTS[0].id) },
-    { key: "2", description: "Switch to second sample", handler: () => handleSelectSample(SAMPLE_PROJECTS[1]?.id ?? SAMPLE_PROJECTS[0].id) },
-  ];
-  useKeyboardShortcuts(shortcuts);
-
-  function handleSelectSample(id: string) {
-    setSelectedSample(id);
-    setSelectedNode(null);
-    setSelectedElement(null);
+  function loadSample(id: string) {
+    setSamplePicker(id);
+    if (id === "__blank__") {
+      setProject({
+        schema_version: "0.1.0",
+        project: { name: "Untitled" },
+        nodes: [], elements: [], sections: [], materials: [], restraints: [],
+        load_cases: [{ id: "W", kind: "weight" }],
+        load_combinations: [{ id: "SUS", cases: ["W"], category: "sustained" }],
+        code: "B31.3", code_version: "2022",
+      });
+    } else {
+      const sample = SAMPLE_PROJECTS.find((s) => s.id === id);
+      if (sample) setProject(sample.project);
+    }
     setResults(null);
-    setResultCombo(null);
-    setModesData(null);
-    setAnimatedModeIndex(null);
   }
 
   async function handleSolve() {
@@ -63,6 +70,7 @@ export function App() {
       if (project.load_combinations.length > 0) {
         setResultCombo(project.load_combinations[0].id);
       }
+      setMode("analysis");
     } finally {
       setSolving(false);
     }
@@ -72,32 +80,98 @@ export function App() {
     ? modesData[animatedModeIndex] ?? null
     : null;
 
+  const shortcuts = [
+    { key: "?", description: "Show shortcut help", handler: () => setShortcutHelpOpen(true) },
+    { key: "r", description: "Run code check", handler: () => handleSolve() },
+    { key: "cmd+z", description: "Undo", handler: () => undo() },
+    { key: "cmd+shift+z", description: "Redo", handler: () => redo() },
+    { key: "escape", description: "Clear selection / tool",
+      handler: () => { clearSelection(); setTool("select"); setShortcutHelpOpen(false); } },
+    { key: "s", description: "Select tool", handler: () => setTool("select") },
+    { key: "n", description: "Add-node tool", handler: () => setTool("add-node") },
+    { key: "p", description: "Connect-pipe tool", handler: () => setTool("connect-pipe") },
+    { key: "e", description: "Connect-elbow tool", handler: () => setTool("connect-elbow") },
+    { key: "a", description: "Anchor tool", handler: () => setTool("add-restraint") },
+    { key: "d", description: "Delete tool", handler: () => setTool("delete") },
+    { key: "m", description: "Toggle Design / Analyze",
+      handler: () => setMode(mode === "design" ? "analysis" : "design") },
+  ];
+  useKeyboardShortcuts(shortcuts);
+
   return (
-    <div className="app">
+    <div className="app cad">
       <ShortcutHelp shortcuts={shortcuts} open={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
-      <header>
+      <header className="cad-header">
         <div className="logo">pypemesh <span className="badge">pre-alpha</span></div>
+        <div className="header-middle">
+          <select
+            className="sample-select"
+            value={samplePicker}
+            onChange={(e) => loadSample(e.target.value)}
+          >
+            <option value="__blank__">＋ Blank project</option>
+            {SAMPLE_PROJECTS.map((s) => (
+              <option key={s.id} value={s.id}>📁 {s.label}</option>
+            ))}
+          </select>
+          <ImportExportBar />
+        </div>
         <nav>
           <a href="#" onClick={(e) => { e.preventDefault(); setShortcutHelpOpen(true); }}>?</a>
           <a href="https://github.com/mihirpatel231197-art/pypemesh" target="_blank" rel="noreferrer">
             GitHub
           </a>
-          <a href="#about">About</a>
+          <a href="https://mihirpatel231197-art.github.io/pypemesh/" target="_blank" rel="noreferrer">
+            Docs
+          </a>
         </nav>
       </header>
 
-      <main>
-        <section className="modeler-section">
-          <div className="modeler-canvas">
-            <div className="sample-picker">
-              <label>Sample:</label>
-              <select value={selectedSample} onChange={(e) => handleSelectSample(e.target.value)}>
-                {SAMPLE_PROJECTS.map((s) => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
-              <label>Code:</label>
-              <select value={selectedCode} onChange={(e) => setSelectedCode(e.target.value as CodeChoice)}>
+      <Toolbar />
+
+      <div className="cad-layout">
+        <aside className="cad-left">
+          <LibraryBrowser />
+        </aside>
+
+        <main className="cad-main">
+          {mode === "design" ? (
+            <DesignViewport />
+          ) : (
+            <Modeler
+              project={project}
+              selectedNode={null}
+              selectedElement={null}
+              onSelectNode={() => {}}
+              onSelectElement={() => {}}
+              results={results}
+              resultCombo={resultCombo}
+              animatedMode={animatedMode}
+              animationSpeed={1.5}
+              animationAmplitude={0.4}
+            />
+          )}
+        </main>
+
+        <aside className="cad-right">
+          <section className="panel">
+            <h3>Properties</h3>
+            <PropertyEditor />
+          </section>
+
+          <section className="panel">
+            <h3>Loads</h3>
+            <LoadCaseEditor />
+          </section>
+
+          <section className="panel panel-analysis">
+            <h3>Analysis</h3>
+            <div className="analysis-config">
+              <label>Code</label>
+              <select
+                value={selectedCode}
+                onChange={(e) => setSelectedCode(e.target.value as CodeChoice)}
+              >
                 <option value="B31.3">ASME B31.3 (process)</option>
                 <option value="B31.1">ASME B31.1 (power)</option>
                 <option value="B31.4">ASME B31.4 (liquid pipeline)</option>
@@ -105,111 +179,42 @@ export function App() {
                 <option value="B31.8">ASME B31.8 (gas transmission)</option>
                 <option value="B31.9">ASME B31.9 (building services)</option>
                 <option value="B31.12">ASME B31.12 (hydrogen)</option>
-                <option value="CSA-Z662">CSA Z662 (Canadian pipeline)</option>
+                <option value="CSA-Z662">CSA Z662 (Canadian)</option>
                 <option value="DNV-ST-F101">DNV-ST-F101 (offshore)</option>
                 <option value="EN-13480">EN 13480 (European)</option>
               </select>
-              <div className="view-toggle">
-                <button
-                  className={`view-btn ${viewMode === "3d" ? "active" : ""}`}
-                  onClick={() => setViewMode("3d")}
-                >
-                  3D
-                </button>
-                <button
-                  className={`view-btn ${viewMode === "spreadsheet" ? "active" : ""}`}
-                  onClick={() => setViewMode("spreadsheet")}
-                >
-                  Table
-                </button>
-              </div>
-              {animatedMode && (
-                <div className="anim-badge">
-                  ▶ Mode {animatedMode.mode_index + 1} · {animatedMode.frequency_hz.toFixed(2)} Hz
-                </div>
-              )}
             </div>
-            {viewMode === "3d" ? (
-              <Modeler
-                project={project}
-                selectedNode={selectedNode}
-                selectedElement={selectedElement}
-                onSelectNode={setSelectedNode}
-                onSelectElement={setSelectedElement}
-                results={results}
-                resultCombo={resultCombo}
-                animatedMode={animatedMode}
-                animationSpeed={1.5}
-                animationAmplitude={0.4}
-              />
-            ) : (
-              <Spreadsheet project={project} results={results} />
+            <button
+              className="btn-primary-big"
+              onClick={handleSolve}
+              disabled={solving || project.elements.length === 0}
+            >
+              {solving ? "Solving…" : "▶ Run analysis"}
+            </button>
+            {results && (
+              <div className="results-summary">
+                <div className={`status-pill ${results.summary.overall_status}`}>
+                  {results.summary.overall_status.toUpperCase()}
+                </div>
+                <div className="kv"><span>Checks</span><b>{results.summary.total_checks}</b></div>
+                <div className="kv"><span>Failed</span><b>{results.summary.failed}</b></div>
+                <div className="kv"><span>Max ratio</span><b>{(results.summary.max_ratio * 100).toFixed(1)}%</b></div>
+                <div className="combo-select">
+                  {project.load_combinations.map((c) => (
+                    <button
+                      key={c.id}
+                      className={`combo-btn ${resultCombo === c.id ? "active" : ""}`}
+                      onClick={() => setResultCombo(c.id)}
+                    >
+                      {c.id}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
-          </div>
-          <Sidebar
-            project={project}
-            selectedNode={selectedNode}
-            selectedElement={selectedElement}
-            onSelectNode={(id) => { setSelectedNode(id); setSelectedElement(null); }}
-            onSelectElement={(id) => { setSelectedElement(id); setSelectedNode(null); }}
-            results={results}
-            resultCombo={resultCombo}
-            onSelectCombo={setResultCombo}
-            solving={solving}
-            onSolve={handleSolve}
-            animatedModeIndex={animatedModeIndex}
-            onSelectAnimatedMode={setAnimatedModeIndex}
-            onModesLoaded={setModesData}
-          />
-        </section>
-
-        <section id="about" className="about">
-          <h2>What you're looking at</h2>
-          <p>
-            Live pypemesh demo — pick from 5 piping models, choose ASME B31.3 (process),
-            B31.1 (power), or B31.4 (liquid pipeline), then click <b>Run code check</b>
-            for color-coded stress overlays. Click <b>Compute first 5 natural frequencies</b>
-            then click any mode to see it animate in 3D.
-          </p>
-          <p>
-            The solver is a real 3D beam FEA written in Python (pypemesh-core, MIT license).
-            All math derived from first principles in the <a href="https://github.com/mihirpatel231197-art/pypemesh/tree/main/docs/theory" target="_blank" rel="noreferrer">theory docs</a>.
-            111+ unit and analytical tests pass on every commit. Validated to &lt;0.1% on
-            cantilever / thermal / modal benchmarks.
-          </p>
-          <p className="note">
-            If a backend is reachable at <code>VITE_API_BASE</code>, this calls
-            <code>/solve</code> for live results. Otherwise it shows mock results so the
-            demo still works.
-          </p>
-        </section>
-
-        <section className="features">
-          <div className="feature">
-            <h3>Validated solver</h3>
-            <p>Cantilever PL³/3EI &lt;0.1%. Thermal EAαΔT &lt;0.1%. Modal first mode &lt;0.02%.</p>
-          </div>
-          <div className="feature">
-            <h3>3 codes shipping</h3>
-            <p>B31.3 process, B31.1 power, B31.4 pipeline. EN 13480 + nuclear on roadmap.</p>
-          </div>
-          <div className="feature">
-            <h3>Full dynamics</h3>
-            <p>Modal + response spectrum (SRSS/CQC) + time history (Newmark-β).</p>
-          </div>
-          <div className="feature">
-            <h3>Open core</h3>
-            <p>MIT license. PCF file import. CLI tool. FastAPI backend. Audit it all.</p>
-          </div>
-        </section>
-
-        <footer>
-          <p>
-            MIT licensed · Engineering analysis software requires PE review before use in
-            safety-critical work. See <a href="https://github.com/mihirpatel231197-art/pypemesh/blob/main/LICENSE" target="_blank" rel="noreferrer">LICENSE</a>.
-          </p>
-        </footer>
-      </main>
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }
