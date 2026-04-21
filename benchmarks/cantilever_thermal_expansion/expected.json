@@ -1,0 +1,7 @@
+{
+  "_description": "5-meter cantilever 6\" SCH 40 carbon steel pipe with weight + 50 bar pressure + thermal 20→120°C. Sustained ratio dominated by self-weight bending at the anchor (no transverse anchor on free end). Expansion ratio is zero — the free end can grow with no constraint, no thermal stress.",
+  "stress_ratios": {
+    "E1:SUS": 0.365,
+    "E1:EXP": 0.0
+  }
+}
