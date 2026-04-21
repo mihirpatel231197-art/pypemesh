@@ -44,6 +44,7 @@ pypemesh = "pypemesh_core.cli:main"
 
 [project.entry-points."pypemesh.codes"]
 b31_3 = "pypemesh_core.codes.b31_3:B31_3"
+b31_1 = "pypemesh_core.codes.b31_1:B31_1"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pypemesh_core"]

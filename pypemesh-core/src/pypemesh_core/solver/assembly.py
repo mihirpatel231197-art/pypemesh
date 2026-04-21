@@ -15,6 +15,9 @@ from pypemesh_core.solver.elements.beam import (
     beam_stiffness_global,
 )
 from pypemesh_core.solver.elements.elbow import elbow_h, elbow_stiffness_global
+from pypemesh_core.solver.elements.rigid import rigid_stiffness_global
+from pypemesh_core.solver.elements.spring import spring_stiffness_global
+from pypemesh_core.solver.elements.tee import tee_stiffness_global
 from pypemesh_core.solver.materials import elastic_modulus_at, shear_modulus_at
 from pypemesh_core.solver.model import ElementType, Project
 from pypemesh_core.solver.sections import (
@@ -68,15 +71,28 @@ def assemble_global_stiffness(
     node_index = {n.id: n for n in project.nodes}
 
     for elem in project.elements:
-        if elem.type not in (ElementType.PIPE, ElementType.ELBOW):
-            raise NotImplementedError(
-                f"Element type {elem.type} not implemented yet. See docs/MILESTONES.md."
-            )
-
         n_start = node_index[elem.from_node]
         n_end = node_index[elem.to_node]
         p_start = np.array([n_start.x, n_start.y, n_start.z])
         p_end = np.array([n_end.x, n_end.y, n_end.z])
+
+        if elem.type == ElementType.SPRING:
+            # Spring elements don't need section/material — but we accept them for consistency
+            K_e, T_e, L_e = spring_stiffness_global(p_start, p_end)
+            element_data[elem.id] = {
+                "K_global": K_e, "T": T_e, "L": L_e,
+                "dofs": np.concatenate([
+                    np.arange(dof_map[elem.from_node], dof_map[elem.from_node] + DOF_PER_NODE),
+                    np.arange(dof_map[elem.to_node], dof_map[elem.to_node] + DOF_PER_NODE),
+                ]),
+                "E": 0.0, "G": 0.0, "A": 0.0, "I": 0.0, "J": 0.0,
+                "section_id": None, "material_id": None,
+            }
+            for i, gi in enumerate(element_data[elem.id]["dofs"]):
+                for j, gj in enumerate(element_data[elem.id]["dofs"]):
+                    if K_e[i, j] != 0.0:
+                        rows.append(int(gi)); cols.append(int(gj)); vals.append(float(K_e[i, j]))
+            continue
 
         section = _lookup(project.sections, "id", elem.section)
         material = _lookup(project.materials, "id", elem.material)
@@ -94,8 +110,14 @@ def assemble_global_stiffness(
             K_e, T_e, L_e = elbow_stiffness_global(
                 p_start, p_end, E, G, A, I, J, elem.bend_radius, h
             )
-        else:
+        elif elem.type == ElementType.TEE:
+            K_e, T_e, L_e = tee_stiffness_global(p_start, p_end, E, G, A, I, J)
+        elif elem.type == ElementType.RIGID:
+            K_e, T_e, L_e = rigid_stiffness_global(p_start, p_end, E, A, I, J)
+        elif elem.type in (ElementType.PIPE, ElementType.REDUCER, ElementType.EXPANSION_JOINT):
             K_e, T_e, L_e = beam_stiffness_global(p_start, p_end, E, G, A, I, I, J)
+        else:
+            raise NotImplementedError(f"Element type {elem.type} not implemented")
 
         d_start = dof_map[elem.from_node]
         d_end = dof_map[elem.to_node]
